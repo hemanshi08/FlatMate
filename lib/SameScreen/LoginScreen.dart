@@ -1,3 +1,5 @@
+import 'package:flatmate/SameScreen/CreatePasswordScreen.dart';
+import 'package:flatmate/SameScreen/ForgotPasswordScreen.dart';
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -73,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         'LOGIN',
                         style: TextStyle(
                           fontSize: 47,
-                          color: Color(0xFFD8AFCC), // Pinkish color
+                          color: Color(0xFFD8AFCC),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -83,8 +85,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       TextField(
                         controller: _usernameController,
                         decoration: InputDecoration(
-                          //labelText: 'Email',
-                          //labelStyle: const TextStyle(color: Color(0xFF31B3CD)),
                           hintText: 'Username',
                           hintStyle: TextStyle(
                             fontSize: screenHeight * 0.023,
@@ -92,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           filled: true,
                           fillColor: Colors.white,
                           contentPadding: const EdgeInsets.symmetric(
-                              vertical: 10, horizontal: 15), // Decreased height
+                              vertical: 10, horizontal: 15),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -105,8 +105,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         controller: _passwordController,
                         obscureText: !_isPasswordVisible,
                         decoration: InputDecoration(
-                          //labelText: 'Password',
-                          // labelStyle: const TextStyle(color: Colors.white),
                           hintText: 'Password',
                           hintStyle: TextStyle(
                             fontSize: screenHeight * 0.023,
@@ -114,7 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           filled: true,
                           fillColor: Colors.white,
                           contentPadding: const EdgeInsets.symmetric(
-                              vertical: 10, horizontal: 15), // Decreased height
+                              vertical: 10, horizontal: 15),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _isPasswordVisible
@@ -144,8 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
                                 vertical: 11, horizontal: 10),
-                            backgroundColor:
-                                const Color(0xFF31B3CD), // Cyan button
+                            backgroundColor: const Color(0xFF31B3CD),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -163,13 +160,25 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 22),
 
                       // Forgot password text
+
                       Align(
                         alignment: Alignment.bottomLeft,
-                        child: const Text(
-                          'Forgot password?',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
+                        child: GestureDetector(
+                          onTap: () {
+                            // Navigate to ForgotPasswordScreen when tapped
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const ForgotPassword()),
+                            );
+                          },
+                          child: const Text(
+                            'Forgot password?',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              //decoration: TextDecoration.underline, // Optional underline for styling
+                            ),
                           ),
                         ),
                       ),
@@ -177,15 +186,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 22),
 
                       // Display message
-                      Text(
-                        _message,
-                        style: TextStyle(
-                          color: _message == "Login Successful"
-                              ? Colors.green
-                              : Colors.red,
-                          fontSize: 18,
-                        ),
-                      ),
+                      // Text(
+                      //   _message,
+                      //   style: TextStyle(
+                      //     color: _message == "Login Successful"
+                      //         ? Colors.green
+                      //         : Colors.red,
+                      //     fontSize: 18,
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),
@@ -206,6 +215,12 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         _message = "Login Successful";
       });
+
+      // Navigate to CreatePasswordScreen on successful login
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const CreatePasswordScreen()),
+      );
     } else {
       setState(() {
         _message = "Invalid username or password";

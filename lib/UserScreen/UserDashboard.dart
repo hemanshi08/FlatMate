@@ -39,7 +39,7 @@ class UserDashboard extends StatelessWidget {
                 'WELCOME',
                 style: TextStyle(
                     fontSize: screenWidth * 0.16,
-                    color: Colors.teal,
+                    color: const Color(0xFF31B3CD),
                     fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
@@ -47,7 +47,7 @@ class UserDashboard extends StatelessWidget {
                 'Hemanshi Garnara',
                 style: TextStyle(
                     fontSize: screenWidth * 0.09,
-                    color: Colors.teal,
+                    color: const Color(0xFF31B3CD),
                     fontWeight: FontWeight.bold),
               ),
               SizedBox(height: screenHeight * 0.07),

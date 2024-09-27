@@ -1,3 +1,4 @@
+import 'package:flatmate/UserScreen/UserDashboard.dart';
 import 'package:flutter/material.dart';
 
 class CreatePasswordScreen extends StatefulWidget {
@@ -61,7 +62,7 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                 ),
               ),
 
-              // Login form
+              // Create Password form
               Center(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 31),
@@ -79,13 +80,11 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                       ),
                       const SizedBox(height: 40),
 
-                      // new password TextField
+                      // New password TextField
                       TextField(
                         controller: _newPasswordController,
                         obscureText: !_isnewPasswordVisible,
                         decoration: InputDecoration(
-                          //labelText: 'Password',
-                          // labelStyle: const TextStyle(color: Colors.white),
                           hintText: 'New Password',
                           hintStyle: TextStyle(
                             fontSize: screenHeight * 0.023,
@@ -113,13 +112,11 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                       ),
                       const SizedBox(height: 22),
 
-                      //Confirm Password TextField
+                      // Confirm Password TextField
                       TextField(
                         controller: _confirmPasswordController,
                         obscureText: !_isconfirmPasswordVisible,
                         decoration: InputDecoration(
-                          //labelText: 'Password',
-                          // labelStyle: const TextStyle(color: Colors.white),
                           hintText: 'Confirm Password',
                           hintStyle: TextStyle(
                             fontSize: screenHeight * 0.023,
@@ -148,7 +145,7 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                       ),
                       const SizedBox(height: 22),
 
-                      // set Button
+                      // Set Button
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -186,24 +183,26 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
     );
   }
 
-//
-
   void _set() {
     String newPassword = _newPasswordController.text;
     String confirmPassword = _confirmPasswordController.text;
 
     if (newPassword == confirmPassword) {
-      setState(() {
-        //print('set password');
-      });
+      // If passwords match, navigate to the UserDashboardScreen
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const UserDashboard()),
+      );
     } else {
+      // Display error or handle accordingly
       setState(() {
-        //print('try to set password');
+        // You can show a message if needed
       });
     }
   }
 }
 
+// TrianglePainter1 and TrianglePainter2 remain the same
 class TrianglePainter1 extends CustomPainter {
   final Color color;
   TrianglePainter1(this.color);
