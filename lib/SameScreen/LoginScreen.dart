@@ -71,15 +71,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Text(
+                      Text(
                         'LOGIN',
                         style: TextStyle(
-                          fontSize: 47,
-                          color: Color(0xFFD8AFCC),
+                          fontSize: screenHeight * 0.05, // Responsive font size
+                          color: const Color(0xFFD8AFCC),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 40),
+                      SizedBox(
+                          height: screenHeight * 0.06), // Responsive spacing
 
                       // Email TextField
                       TextField(
@@ -87,7 +88,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         decoration: InputDecoration(
                           hintText: 'Username',
                           hintStyle: TextStyle(
-                            fontSize: screenHeight * 0.023,
+                            fontSize:
+                                screenHeight * 0.022, // Responsive font size
                           ),
                           filled: true,
                           fillColor: Colors.white,
@@ -98,7 +100,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 22),
+                      SizedBox(
+                          height: screenHeight * 0.032), // Responsive spacing
 
                       // Password TextField
                       TextField(
@@ -107,7 +110,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         decoration: InputDecoration(
                           hintText: 'Password',
                           hintStyle: TextStyle(
-                            fontSize: screenHeight * 0.023,
+                            fontSize:
+                                screenHeight * 0.022, // Responsive font size
                           ),
                           filled: true,
                           fillColor: Colors.white,
@@ -130,7 +134,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 22),
+                      SizedBox(
+                          height: screenHeight * 0.032), // Responsive spacing
 
                       // Login Button
                       SizedBox(
@@ -140,27 +145,30 @@ class _LoginScreenState extends State<LoginScreen> {
                             _login();
                           },
                           style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 11, horizontal: 10),
+                            padding: EdgeInsets.symmetric(
+                              vertical:
+                                  screenHeight * 0.010, // Responsive padding
+                            ),
                             backgroundColor: const Color(0xFF31B3CD),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          child: const Text(
+                          child: Text(
                             'LOGIN',
                             style: TextStyle(
-                              fontSize: 22,
-                              color: Color(0xFF06001A),
+                              fontSize:
+                                  screenHeight * 0.0245, // Responsive font size
+                              color: const Color(0xFF06001A),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 22),
+                      SizedBox(
+                          height: screenHeight * 0.023), // Responsive spacing
 
                       // Forgot password text
-
                       Align(
                         alignment: Alignment.bottomLeft,
                         child: GestureDetector(
@@ -172,29 +180,18 @@ class _LoginScreenState extends State<LoginScreen> {
                                   builder: (context) => const ForgotPassword()),
                             );
                           },
-                          child: const Text(
+                          child: Text(
                             'Forgot password?',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 20,
-                              //decoration: TextDecoration.underline, // Optional underline for styling
+                              fontSize:
+                                  screenHeight * 0.0235, // Responsive font size
                             ),
                           ),
                         ),
                       ),
-
-                      const SizedBox(height: 22),
-
-                      // Display message
-                      // Text(
-                      //   _message,
-                      //   style: TextStyle(
-                      //     color: _message == "Login Successful"
-                      //         ? Colors.green
-                      //         : Colors.red,
-                      //     fontSize: 18,
-                      //   ),
-                      // ),
+                      SizedBox(
+                          height: screenHeight * 0.032), // Responsive spacing
                     ],
                   ),
                 ),
@@ -229,7 +226,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// TrianglePainter class for creating the background triangles
+// TrianglePainter1 and TrianglePainter2 remain the same
 class TrianglePainter1 extends CustomPainter {
   final Color color;
   TrianglePainter1(this.color);

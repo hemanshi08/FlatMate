@@ -15,6 +15,6 @@ void main() {
           fontFamily: 'OpenSans',
         ),
         debugShowCheckedModeBanner: false,
-        home: HomePage()),
+        home: SplashScreen()),
   );
 }
