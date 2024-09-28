@@ -1,3 +1,4 @@
+import 'package:flatmate_apartment/UserScreens/Announcement.dart';
 import 'package:flatmate_apartment/UserScreens/complain_first.dart';
 import 'package:flatmate_apartment/UserScreens/expense_list.dart';
 import 'package:flatmate_apartment/UserScreens/maintanance_screen.dart';
@@ -38,7 +39,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       debugShowCheckedModeBanner: false,
-      home: MaintenancePage(),
+      home: AnnouncementPage(),
     );
   }
 }

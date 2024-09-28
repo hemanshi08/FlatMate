@@ -10,44 +10,47 @@ class _ResidentsPageState extends State<ResidentsPage> {
   List<Map<String, String>> residents = [
     {
       "flatNo": "A-101",
-      "ownerName": "Lakshmi Patel",
+      "ownerName": "Lakshmi Kant",
       "people": "4",
-      "email": "lakshmi@gmail.com"
+      "email": "lakshmikant100@gmail.com"
     },
     {
       "flatNo": "A-102",
-      "ownerName": "Amit Shah",
-      "people": "6",
-      "email": "amitshah@gmail.com"
+      "ownerName": "Janki Bhut",
+      "people": "5",
+      "email": "jankibhut25@gmail.com"
     },
     {
       "flatNo": "A-103",
-      "ownerName": "Bharat Sharma",
-      "people": "5",
-      "email": "bharatsharma@gmail.com"
+      "ownerName": "Bhayva Garnara",
+      "people": "6",
+      "email": "bhavyagarnara@gmail.com"
     },
     {
       "flatNo": "A-104",
-      "ownerName": "Hemant Sinha",
-      "people": "3",
-      "email": "hemantsinha@gmail.com"
-    },
-    {
-      "flatNo": "A-105",
-      "ownerName": "Gurpreet Marya",
-      "people": "5",
-      "email": "gurpreet@gmail.com"
-    },
-    {
-      "flatNo": "A-106",
-      "ownerName": "Raghu Samora",
+      "ownerName": "Hemant Sata",
       "people": "4",
-      "email": "raghusamora@gmail.com"
+      "email": "hemantsata12@gmail.com"
+    },
+    {
+      "flatNo": "A-201",
+      "ownerName": "Gunjan Maru",
+      "people": "3",
+      "email": "gunjan45@gmail.com"
+    },
+    {
+      "flatNo": "A-202",
+      "ownerName": "Bhargrv Garnara",
+      "people": "6",
+      "email": "bgarnara2013@gmail.com"
     },
   ];
 
   // List for displaying filtered results
   List<Map<String, String>>? filteredResidents;
+
+  // Controller for the search bar
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -68,6 +71,11 @@ class _ResidentsPageState extends State<ResidentsPage> {
     setState(() {
       filteredResidents = results;
     });
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    _searchResidents('');
   }
 
   @override
@@ -106,15 +114,34 @@ class _ResidentsPageState extends State<ResidentsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Search bar
+            // Search bar with underline
             TextField(
-              onChanged: (value) => _searchResidents(value),
+              controller: _searchController,
+              onChanged: _searchResidents,
               decoration: InputDecoration(
                 hintText: 'Search by flat no. or owner name',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
+                prefixIcon: Icon(Icons.search, color: Colors.black),
+                suffixIcon: IconButton(
+                  icon: Icon(Icons.clear, color: Colors.black),
+                  onPressed: _clearSearch,
                 ),
+                border: UnderlineInputBorder(
+                  // Underline only
+                  borderSide:
+                      BorderSide(color: Colors.pink), // Change color as needed
+                ),
+                enabledBorder: UnderlineInputBorder(
+                  // When not focused
+                  borderSide:
+                      BorderSide(color: Colors.grey), // Change to desired color
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  // When focused
+                  borderSide:
+                      BorderSide(color: Colors.cyan), // Change to desired color
+                ),
+                contentPadding:
+                    EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
               ),
             ),
             SizedBox(height: 20),
@@ -150,10 +177,3 @@ class _ResidentsPageState extends State<ResidentsPage> {
     );
   }
 }
-
-// void main() => runApp(MaterialApp(
-//       theme: ThemeData(
-//         primarySwatch: Colors.deepPurple,
-//       ),
-//       home: ResidentsPage(),
-//     ));
