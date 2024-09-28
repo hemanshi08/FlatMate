@@ -1,7 +1,6 @@
 import 'package:flatmate/SameScreen/OTPVerificationScreen.dart';
 import 'package:flutter/material.dart';
-import 'loginscreen.dart'; // import your login screen file
-import 'OTPVerificationScreen.dart';
+import 'loginscreen.dart'; // Import your login screen file
 
 class ForgotPassword extends StatefulWidget {
   const ForgotPassword({super.key});
@@ -24,8 +23,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
           width: screenWidth, // Full screen width
           child: Stack(
             children: [
-              //
-              // gles
+              // Triangles
               Positioned(
                 top: 40,
                 right: 0,
@@ -63,54 +61,58 @@ class _ForgotPasswordState extends State<ForgotPassword> {
               Center(
                 child: Padding(
                   padding: EdgeInsets.symmetric(
-                      horizontal: screenWidth * 0.09,
-                      vertical: screenHeight * 0.04),
+                    horizontal: screenWidth * 0.09,
+                    vertical: screenHeight * 0.04,
+                  ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        'Forgot password',
+                      Text(
+                        'Forgot Password',
                         style: TextStyle(
-                          fontSize: 43,
+                          fontSize: screenHeight * 0.042, // Adjust font size
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFFD8AFCC),
+                          color: const Color(0xFFD8AFCC),
                         ),
                       ),
-                      const SizedBox(height: 25),
-                      const Text(
+                      SizedBox(height: screenHeight * 0.034), // Dynamic height
+                      Text(
                         'Enter your email account to reset your password',
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: screenHeight * 0.022, // Adjust font size
                           color: Colors.white,
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 40),
+                      SizedBox(height: screenHeight * 0.06), // Dynamic height
 
                       // Email TextField
                       TextField(
                         decoration: InputDecoration(
                           hintText: 'abc@gmail.com',
                           hintStyle: TextStyle(
-                            fontSize: screenHeight * 0.023,
+                            fontSize: screenHeight * 0.022, // Adjust font size
                           ),
                           filled: true,
                           fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(
-                              vertical: 10, horizontal: 15),
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: screenHeight * 0.012, // Dynamic padding
+                            horizontal: screenWidth * 0.05,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 22),
+                      SizedBox(height: screenHeight * 0.032), // Dynamic height
 
                       // Action Buttons (Cancel and Reset Password)
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           // Cancel Button
                           SizedBox(
-                            width: screenWidth * 0.32,
+                            width: screenWidth * 0.31,
                             child: ElevatedButton(
                               onPressed: () {
                                 // Navigate to the LoginScreen
@@ -123,26 +125,27 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFF13E16),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 14),
+                                padding: EdgeInsets.symmetric(
+                                  vertical:
+                                      screenHeight * 0.011, // Dynamic padding
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                               ),
-                              child: const Text(
+                              child: Text(
                                 'Cancel',
                                 style: TextStyle(
-                                  fontSize: 21,
+                                  fontSize:
+                                      screenHeight * 0.0243, // Adjust font size
                                   color: Colors.white,
                                 ),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
-
                           // Reset Password Button
                           SizedBox(
-                            width: screenWidth * 0.46,
+                            width: screenWidth * 0.483,
                             child: ElevatedButton(
                               onPressed: () {
                                 // Navigate to the OTPVerificationScreen
@@ -155,17 +158,20 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF31B3CD),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 14),
+                                padding: EdgeInsets.symmetric(
+                                  vertical:
+                                      screenHeight * 0.011, // Dynamic padding
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                               ),
-                              child: const Text(
+                              child: Text(
                                 'Reset Password',
                                 style: TextStyle(
-                                  fontSize: 21,
-                                  color: Color(0xFF06001A),
+                                  fontSize:
+                                      screenHeight * 0.0243, // Adjust font size
+                                  color: const Color(0xFF06001A),
                                 ),
                               ),
                             ),

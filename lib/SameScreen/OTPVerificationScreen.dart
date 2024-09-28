@@ -60,15 +60,15 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // OTP Verification Title
-                    const Text(
+                    Text(
                       'OTP Verification',
                       style: TextStyle(
-                        fontSize: 38,
+                        fontSize: screenHeight * 0.042, // Adjust font size
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFFCCAACF), // Light pink color
+                        color: const Color(0xFFCCAACF), // Light pink color
                       ),
                     ),
-                    const SizedBox(height: 40),
+                    SizedBox(height: screenHeight * 0.06), // Dynamic height
 
                     // OTP Code Label
                     Align(
@@ -76,12 +76,13 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                       child: Text(
                         'OTP Code',
                         style: TextStyle(
-                          fontSize: 22,
-                          color: Color(0xFFCCAACF), // White color for label
+                          fontSize: screenHeight * 0.0235, // Adjust font size
+                          color:
+                              const Color(0xFFCCAACF), // White color for label
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: screenHeight * 0.023), // Dynamic height
 
                     // OTP Input Fields
                     Row(
@@ -98,13 +99,14 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: 15,
-                                horizontal: 17,
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical:
+                                    screenHeight * 0.016, // Dynamic padding
+                                horizontal: screenWidth * 0.04,
                               ),
                             ),
-                            style: const TextStyle(
-                              fontSize: 24,
+                            style: TextStyle(
+                              fontSize: screenHeight * 0.03, // Adjust font size
                               fontWeight: FontWeight.bold,
                               color: Colors.black,
                             ),
@@ -121,7 +123,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                         );
                       }),
                     ),
-                    const SizedBox(height: 22),
+                    SizedBox(height: screenHeight * 0.017), // Dynamic height
 
                     // Verify Button
                     SizedBox(
@@ -131,19 +133,21 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                           // Handle OTP Verification action
                         },
                         style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 11, horizontal: 10),
+                          padding: EdgeInsets.symmetric(
+                            vertical: screenHeight * 0.010, // Dynamic padding
+                            horizontal: screenWidth * 0.04,
+                          ),
                           backgroundColor:
                               const Color(0xFF31B3CD), // Cyan button
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Verify',
                           style: TextStyle(
-                            fontSize: 20,
-                            color: Color(0xFF06001A), // Button text color
+                            fontSize: screenHeight * 0.0245, // Adjust font size
+                            color: const Color(0xFF06001A), // Button text color
                           ),
                         ),
                       ),

@@ -1,4 +1,3 @@
-
 import 'package:flatmate/UserScreen/UserDashboard.dart';
 import 'package:flutter/material.dart';
 
@@ -71,15 +70,15 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Text(
+                      Text(
                         'Create Password',
                         style: TextStyle(
-                          fontSize: 43,
-                          color: Color(0xFFD8AFCC), // Pinkish color
+                          fontSize: screenHeight * 0.042, // Adjust font size
+                          color: const Color(0xFFD8AFCC), // Pinkish color
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 40),
+                      SizedBox(height: screenHeight * 0.06), // Dynamic height
 
                       // New password TextField
                       TextField(
@@ -88,12 +87,14 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                         decoration: InputDecoration(
                           hintText: 'New Password',
                           hintStyle: TextStyle(
-                            fontSize: screenHeight * 0.023,
+                            fontSize: screenHeight * 0.022, // Adjust font size
                           ),
                           filled: true,
                           fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(
-                              vertical: 10, horizontal: 15), // Decreased height
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: screenHeight * 0.012, // Dynamic padding
+                            horizontal: screenWidth * 0.04,
+                          ),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _isnewPasswordVisible
@@ -111,7 +112,7 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 22),
+                      SizedBox(height: screenHeight * 0.032), // Dynamic height
 
                       // Confirm Password TextField
                       TextField(
@@ -120,12 +121,14 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                         decoration: InputDecoration(
                           hintText: 'Confirm Password',
                           hintStyle: TextStyle(
-                            fontSize: screenHeight * 0.023,
+                            fontSize: screenHeight * 0.022, // Adjust font size
                           ),
                           filled: true,
                           fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(
-                              vertical: 10, horizontal: 15), // Decreased height
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: screenHeight * 0.012, // Dynamic padding
+                            horizontal: screenWidth * 0.04,
+                          ),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _isconfirmPasswordVisible
@@ -144,7 +147,7 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 22),
+                      SizedBox(height: screenHeight * 0.032), // Dynamic height
 
                       // Set Button
                       SizedBox(
@@ -154,25 +157,28 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                             _set();
                           },
                           style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 11, horizontal: 10),
+                            padding: EdgeInsets.symmetric(
+                              vertical: screenHeight * 0.010, // Dynamic padding
+                              //horizontal: screenWidth * 0.05,
+                            ),
                             backgroundColor:
                                 const Color(0xFF31B3CD), // Cyan button
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          child: const Text(
+                          child: Text(
                             'SET',
                             style: TextStyle(
-                              fontSize: 22,
-                              color: Color(0xFF06001A),
+                              fontSize:
+                                  screenHeight * 0.0245, // Adjust font size
+                              color: const Color(0xFF06001A),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 22),
+                      SizedBox(height: screenHeight * 0.032), // Dynamic height
                     ],
                   ),
                 ),
