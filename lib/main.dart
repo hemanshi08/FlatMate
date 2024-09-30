@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'admin/admin_dashboard.dart';
 import 'admin/bottombar/admin_complain.dart';
 import 'admin/bottombar/admin_expense.dart';
+import 'admin/bottombar/admin_maintense.dart';
 
 void main() {
   runApp(const MyApp());
@@ -30,7 +31,8 @@ class MyApp extends StatelessWidget {
           fontFamily: 'OpenSans',
         ),
         debugShowCheckedModeBanner: false,
-        home: AdminExpense() // Adjust this according to your app's homepage
+        home:
+            MaintenanceScreen() // Adjust this according to your app's homepage
         );
   }
 }
