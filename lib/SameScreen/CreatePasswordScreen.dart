@@ -73,7 +73,7 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                       Text(
                         'Create Password',
                         style: TextStyle(
-                          fontSize: screenHeight * 0.042, // Adjust font size
+                          fontSize: screenWidth * 0.090, // Adjust font size
                           color: const Color(0xFFD8AFCC), // Pinkish color
                           fontWeight: FontWeight.bold,
                         ),

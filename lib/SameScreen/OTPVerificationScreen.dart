@@ -63,7 +63,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                     Text(
                       'OTP Verification',
                       style: TextStyle(
-                        fontSize: screenHeight * 0.042, // Adjust font size
+                        fontSize: screenWidth * 0.090, // Adjust font size
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFFCCAACF), // Light pink color
                       ),
