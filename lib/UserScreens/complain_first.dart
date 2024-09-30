@@ -1,4 +1,7 @@
+import 'package:flatmate/UserScreens/expense_list.dart';
 import 'package:flutter/material.dart';
+import 'package:flatmate/UserScreens/maintanance_screen.dart';
+import 'package:flatmate/UserScreens/user_dashboard.dart';
 
 void main() => runApp(ComplaintsApp());
 
@@ -18,7 +21,9 @@ class ComplaintsScreen extends StatefulWidget {
 }
 
 class _ComplaintsScreenState extends State<ComplaintsScreen> {
-  int selectedIndex = 0;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  int selectedIndexButton = 0;
+  int _selectedIndex = 0;
 
   // Function to open the complaint form
   void _openComplaintForm() {
@@ -32,24 +37,35 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
+      key: _scaffoldKey,
+
       appBar: AppBar(
         backgroundColor: const Color(0xFF06001A),
-        title: Text("Complains",
-            style: TextStyle(
-              color: Colors.white,
-            )),
+        title: Text(
+          'Complains',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 26,
+            letterSpacing: 1,
+          ),
+        ),
+        toolbarHeight: 60.0,
         actions: [
           IconButton(
-            icon: Icon(
-              Icons.menu,
-              color: const Color(0xFF06001A),
-            ),
-            onPressed: () {},
-          )
+            icon: Icon(Icons.menu),
+            onPressed: () {
+              _scaffoldKey.currentState
+                  ?.openEndDrawer(); // Open right-side drawer
+            },
+          ),
         ],
-        toolbarHeight: 60.0,
       ),
+      endDrawer: _buildDrawer(screenWidth), // Right-side drawer
+
       body: Column(
         children: [
           Padding(
@@ -73,7 +89,7 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
               ),
             ),
           ),
-          SizedBox(height: 16),
+          SizedBox(height: screenHeight * 0.02),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Container(
@@ -88,13 +104,13 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
                     child: GestureDetector(
                       onTap: () {
                         setState(() {
-                          selectedIndex = 0;
+                          selectedIndexButton = 0;
                         });
                       },
                       child: Container(
                         padding: EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
-                          color: selectedIndex == 0
+                          color: selectedIndexButton == 0
                               ? const Color(0xFFD8AFCC)
                               : Colors.transparent,
                           borderRadius: BorderRadius.only(
@@ -106,8 +122,8 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
                           child: Text(
                             "Solved Complains",
                             style: TextStyle(
-                              fontSize: 16,
-                              color: selectedIndex == 0
+                              fontSize: screenWidth * 0.041,
+                              color: selectedIndexButton == 0
                                   ? const Color(0xFF66123A)
                                   : const Color(0xFF66123A),
                               fontWeight: FontWeight.bold,
@@ -121,13 +137,13 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
                     child: GestureDetector(
                       onTap: () {
                         setState(() {
-                          selectedIndex = 1;
+                          selectedIndexButton = 1;
                         });
                       },
                       child: Container(
                         padding: EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
-                          color: selectedIndex == 1
+                          color: selectedIndexButton == 1
                               ? const Color(0xFFD8AFCC)
                               : Colors.transparent,
                           borderRadius: BorderRadius.only(
@@ -139,8 +155,8 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
                           child: Text(
                             "Unsolved Complains",
                             style: TextStyle(
-                              fontSize: 16,
-                              color: selectedIndex == 1
+                              fontSize: screenWidth * 0.041,
+                              color: selectedIndexButton == 1
                                   ? const Color(0xFF66123A)
                                   : const Color(0xFF66123A),
                               fontWeight: FontWeight.bold,
@@ -156,7 +172,7 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
           ),
           SizedBox(height: 16),
           Expanded(
-            child: selectedIndex == 0
+            child: selectedIndexButton == 0
                 ? ComplaintsListView(
                     isSolved: true,
                     onComplaintSelected: (complaint) {
@@ -173,17 +189,177 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 2, // Corresponds to "Announcement" tab
+        currentIndex: 2,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+
+          // Add logic for navigation on different tabs
+          switch (index) {
+            case 0:
+              // If home is selected, you can refresh the HomePage or stay here
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => HomePage()),
+              );
+              break;
+            case 1:
+              // Navigate to Maintenance page when Maintenance tab is tapped
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => MaintenancePage()),
+              );
+              break;
+            case 2:
+              break;
+            case 3:
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ExpenseListScreen()),
+              );
+              break;
+          }
+        },
+        selectedItemColor: const Color(0xFF31B3CD),
+        unselectedItemColor: Color.fromARGB(255, 128, 130, 132),
+        backgroundColor: Colors.white,
+        type: BottomNavigationBarType.fixed,
+        selectedFontSize: 16,
+        unselectedFontSize: 13,
         items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.build), label: 'Maintenance'),
+            icon: Icon(Icons.home, size: 28),
+            label: 'Home',
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.announcement), label: 'Announcement'),
+            icon: Icon(Icons.payment, size: 28),
+            label: 'Maintenance',
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.attach_money), label: 'Expense List'),
+            icon: Icon(Icons.feedback, size: 28),
+            label: 'Complaints',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.monetization_on, size: 28),
+            label: 'Expense List',
+          ),
+        ],
+        iconSize: 30,
+        elevation: 10,
+        showUnselectedLabels: true,
+      ),
+    );
+  }
+
+  Widget _buildDrawer(double screenWidth) {
+    return Drawer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: const Color(0xFF06001A),
+            ),
+            child: Center(
+              child: Column(
+                children: [
+                  SizedBox(height: 20),
+                  Container(
+                    width: screenWidth * 0.25,
+                    height: screenWidth * 0.25,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'HG',
+                        style: TextStyle(
+                          fontSize: screenWidth * 0.1,
+                          color: const Color(0xFF06001A),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: Container(
+              color: const Color(0xFFE9F2F9),
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: <Widget>[
+                  _buildDrawerItem(Icons.edit, 'Profile', context, () {
+                    // Navigate to Profile Page
+                  }),
+                  _buildDivider(),
+                  _buildDrawerItem(Icons.language, 'Language Settings', context,
+                      () {
+                    // Navigate to Language Settings Page
+                  }),
+                  _buildDivider(),
+                  _buildDrawerItem(Icons.security, 'Security Details', context,
+                      () {
+                    // Navigate to Security Details Page
+                  }),
+                  _buildDivider(),
+                  _buildDrawerItem(
+                      Icons.contact_phone, 'Contact Information', context, () {
+                    // Navigate to Contact Information Page
+                  }),
+                  _buildDivider(),
+                ],
+              ),
+            ),
+          ),
+          Column(
+            children: [
+              Divider(thickness: 2, color: const Color(0xFF06001A)),
+              ListTile(
+                leading: Icon(Icons.logout, color: const Color(0xFF06001A)),
+                title: Text('Logout',
+                    style: TextStyle(color: const Color(0xFF06001A))),
+                onTap: () {
+                  // Handle logout
+                },
+              ),
+            ],
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDrawerItem(IconData icon, String title, BuildContext context,
+      [VoidCallback? onTap]) {
+    return ListTile(
+      leading: Icon(icon, color: const Color(0xFF06001A)),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: const Color(0xFF06001A),
+          fontSize: 16,
+        ),
+      ),
+      onTap: onTap ??
+          () {
+            // Default tap action (if not provided)
+          },
+    );
+  }
+
+  Widget _buildDivider() {
+    return Divider(
+      color: const Color(0xFF06001A),
+      thickness: 1.5,
+      indent: 20,
+      endIndent: 20,
     );
   }
 

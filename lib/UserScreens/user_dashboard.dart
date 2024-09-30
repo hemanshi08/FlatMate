@@ -1,3 +1,14 @@
+import 'package:flatmate/UserScreens/Announcement.dart';
+import 'package:flatmate/UserScreens/complain_first.dart';
+import 'package:flatmate/UserScreens/expense_list.dart';
+import 'package:flatmate/UserScreens/maintanance_screen.dart';
+import 'package:flatmate/UserScreens/residentdetails.dart';
+import 'package:flatmate/UserScreens/rules.dart';
+import 'package:flatmate/UserScreens/visitor_log.dart';
+import 'package:flatmate/drawer/contact_details.dart';
+import 'package:flatmate/drawer/language.dart';
+import 'package:flatmate/drawer/profile.dart';
+import 'package:flatmate/drawer/security_details.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatefulWidget {
@@ -10,7 +21,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // Get screen width and height using MediaQuery
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
 
@@ -22,8 +32,7 @@ class _HomePageState extends State<HomePage> {
           'FlatMate',
           style: TextStyle(
             color: Colors.white,
-            fontSize:
-                screenWidth * 0.090, // Font size is 9% of the screen width
+            fontSize: screenWidth * 0.090,
             fontWeight: FontWeight.bold,
             letterSpacing: 1,
           ),
@@ -34,27 +43,23 @@ class _HomePageState extends State<HomePage> {
               icon: Icon(Icons.menu, color: Colors.white),
               iconSize: screenWidth * 0.095,
               onPressed: () {
-                Scaffold.of(context).openEndDrawer(); // Opens the endDrawer
+                Scaffold.of(context).openEndDrawer();
               },
             ),
           ),
         ],
       ),
-      endDrawer:
-          _buildDrawer(screenWidth, screenHeight), // Updated drawer design
+      endDrawer: _buildDrawer(screenWidth, screenHeight),
       body: Container(
-        color: const Color(0xFF06001A), // Dark background
+        color: const Color(0xFF06001A),
         child: Column(
           children: [
-            SizedBox(
-                height:
-                    screenHeight * 0.11), // Adjusted spacing for even padding
+            SizedBox(height: screenHeight * 0.11),
             Text(
               'WELCOME',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize:
-                    screenWidth * 0.10, // Font size is 10% of the screen width
+                fontSize: screenWidth * 0.10,
                 color: const Color(0xFF31B3CD),
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1,
@@ -64,45 +69,40 @@ class _HomePageState extends State<HomePage> {
               'Hemanshi Garnara',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize:
-                    screenWidth * 0.08, // Font size is 8% of the screen width
+                fontSize: screenWidth * 0.08,
                 color: const Color(0xFF31B3CD),
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1,
               ),
             ),
-            SizedBox(
-                height: screenHeight * 0.05), // Even padding between elements
+            SizedBox(height: screenHeight * 0.05),
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(50),
-                    topRight: Radius.circular(50),
+                    topLeft: Radius.circular(screenWidth * 0.15),
+                    topRight: Radius.circular(screenWidth * 0.15),
                   ),
                 ),
-                padding: EdgeInsets.all(50),
+                padding: EdgeInsets.all(screenWidth * 0.12),
                 child: GridView.count(
                   padding: EdgeInsets.only(
-                    top: 30,
-                    bottom: 30,
+                    top: screenHeight * 0.04,
+                    bottom: screenHeight * 0.04,
                   ),
                   crossAxisCount: 2,
                   crossAxisSpacing: 21,
-                  mainAxisSpacing: 34,
+                  mainAxisSpacing: screenHeight * 0.04,
                   children: [
                     _buildGridItem(Icons.article, 'Rules & Regulation', context,
-                        RulesScreen()),
+                        RulesPage()),
+                    _buildGridItem(Icons.notifications_active, 'Announcement',
+                        context, AnnouncementPage()),
                     _buildGridItem(
-                        Icons.notifications_active,
-                        'Announcement',
-                        context,
-                        AnnouncementScreen()), // Updated Icon for Announcement
+                        Icons.people, 'Residents', context, ResidentsPage()),
                     _buildGridItem(
-                        Icons.people, 'Residents', context, ResidentsScreen()),
-                    _buildGridItem(Icons.badge, 'Visitor', context,
-                        VisitorScreen()), // Updated Icon for Visitor
+                        Icons.badge, 'Visitor', context, VisitorLogScreen()),
                   ],
                 ),
               ),
@@ -116,29 +116,59 @@ class _HomePageState extends State<HomePage> {
           setState(() {
             _selectedIndex = index;
           });
+
+          // Add logic for navigation on different tabs
+          switch (index) {
+            case 0:
+              // If home is selected, you can refresh the HomePage or stay here
+              break;
+            case 1:
+              // Navigate to Maintenance page when Maintenance tab is tapped
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => MaintenancePage()),
+              ).then((_) {
+                setState(() {
+                  _selectedIndex = 1; // Ensure the Maintenance tab is selected
+                });
+              });
+              break;
+            case 2:
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ComplaintsScreen()),
+              );
+              break;
+            case 3:
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ExpenseListScreen()),
+              );
+              break;
+          }
         },
         selectedItemColor: const Color(0xFF31B3CD),
         unselectedItemColor: Color.fromARGB(255, 128, 130, 132),
         backgroundColor: Colors.white,
         type: BottomNavigationBarType.fixed,
-        selectedFontSize: 16, // Increased font size for labels
-        unselectedFontSize: 13, // Default font size for unselected labels
+        selectedFontSize: 16,
+        unselectedFontSize: 13,
         items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home, size: 28), // Increased icon size
-            label: 'Home', // Added colon to the label
+            icon: Icon(Icons.home, size: 28),
+            label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.payment, size: 28), // Updated Icon
-            label: 'Maintenance', // Updated Label
+            icon: Icon(Icons.payment, size: 28),
+            label: 'Maintenance',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.feedback, size: 28), // Increased icon size
-            label: 'Complaints', // Added colon to the label
+            icon: Icon(Icons.feedback, size: 28),
+            label: 'Complaints',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.monetization_on, size: 28), // Updated Icon
-            label: 'Expense List', // Updated Label
+            icon: Icon(Icons.monetization_on, size: 28),
+            label: 'Expense List',
           ),
         ],
         iconSize: 30,
@@ -161,8 +191,8 @@ class _HomePageState extends State<HomePage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 117, // Set a fixed width for the boxes
-            height: 117, // Set a fixed height for the boxes
+            width: 117,
+            height: 117,
             decoration: BoxDecoration(
               color: Color.fromARGB(255, 240, 238, 238),
               borderRadius: BorderRadius.circular(15),
@@ -171,12 +201,12 @@ class _HomePageState extends State<HomePage> {
               child: Icon(icon, size: 45, color: Colors.black87),
             ),
           ),
-          SizedBox(height: 7), // Space between box and title
+          SizedBox(height: 7),
           Text(
             label,
             style: TextStyle(
               fontSize: 14,
-              color: const Color.fromARGB(221, 43, 42, 42), // Changed color
+              color: const Color.fromARGB(221, 43, 42, 42),
             ),
             textAlign: TextAlign.center,
           ),
@@ -185,33 +215,31 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Updated Drawer Design with Profile Header and Menu Items
   Widget _buildDrawer(double screenWidth, double screenHeight) {
     return Drawer(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Drawer Header with Profile Initials
           Container(
             width: double.infinity,
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xFF06001A), // Dark background color
+              color: const Color(0xFF06001A),
             ),
             child: Center(
               child: Column(
                 children: [
+                  SizedBox(height: screenHeight * 0.03),
                   Container(
                     width: screenWidth * 0.25,
                     height: screenWidth * 0.25,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius:
-                          BorderRadius.circular(10), // Rounded profile box
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: Center(
                       child: Text(
-                        'HG', // Initials
+                        'HG',
                         style: TextStyle(
                           fontSize: screenWidth * 0.1,
                           color: const Color(0xFF06001A),
@@ -224,29 +252,57 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          // Drawer Items
           Expanded(
             child: Container(
-              color: const Color(
-                  0xFFE9F2F9), // Light blue background for the rest of the drawer
+              color: const Color(0xFFE9F2F9),
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: <Widget>[
-                  _buildDrawerItem(Icons.edit, 'Edit Profile'),
+                  _buildDrawerItem(Icons.edit, 'Profile', context, () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ProfilePage()),
+                    );
+                  }),
                   _buildDivider(),
-                  _buildDrawerItem(Icons.language, 'Language Settings'),
+                  _buildDrawerItem(Icons.language, 'Language Settings', context,
+                      () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => LanguageSelectionPage()),
+                    );
+                  }),
                   _buildDivider(),
-                  _buildDrawerItem(Icons.lock, 'Change Password'),
+                  // _buildDrawerItem(Icons.lock, 'Change Password', context, () {
+                  //   Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(builder: (context) => ProfilePage()),
+                  //   );
+                  // }),
+                  // _buildDivider(),
+                  _buildDrawerItem(Icons.security, 'Security Details', context,
+                      () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => SecurityDetailsPage()),
+                    );
+                  }),
                   _buildDivider(),
-                  _buildDrawerItem(Icons.security, 'Security Details'),
-                  _buildDivider(),
-                  _buildDrawerItem(Icons.contact_phone, 'Contact Information'),
+                  _buildDrawerItem(
+                      Icons.contact_phone, 'Contact Information', context, () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ContactDetailsPage()),
+                    );
+                  }),
                   _buildDivider(),
                 ],
               ),
             ),
           ),
-          // Logout Button
           Column(
             children: [
               Divider(thickness: 2, color: const Color(0xFF06001A)),
@@ -265,8 +321,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Helper to build Drawer Items
-  Widget _buildDrawerItem(IconData icon, String title) {
+  Widget _buildDrawerItem(IconData icon, String title, BuildContext context,
+      [VoidCallback? onTap]) {
     return ListTile(
       leading: Icon(icon, color: const Color(0xFF06001A)),
       title: Text(
@@ -276,58 +332,17 @@ class _HomePageState extends State<HomePage> {
           fontSize: 16,
         ),
       ),
-      onTap: () {
-        // Handle each tap
-      },
+      onTap: onTap ??
+          () {
+            // Default tap action (if not provided)
+          },
     );
   }
 
-  // Divider for drawer items
   Widget _buildDivider() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Divider(color: Colors.black),
-    );
-  }
-}
-
-// Dummy screens for navigation
-class RulesScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Rules & Regulation')),
-      body: Center(child: Text('Rules & Regulation Screen')),
-    );
-  }
-}
-
-class AnnouncementScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Announcement')),
-      body: Center(child: Text('Announcement Screen')),
-    );
-  }
-}
-
-class ResidentsScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Residents')),
-      body: Center(child: Text('Residents Screen')),
-    );
-  }
-}
-
-class VisitorScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Visitor')),
-      body: Center(child: Text('Visitor Screen')),
     );
   }
 }

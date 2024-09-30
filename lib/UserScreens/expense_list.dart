@@ -1,18 +1,9 @@
+import 'package:flatmate/UserScreens/complain_first.dart';
+import 'package:flatmate/UserScreens/maintanance_screen.dart';
+import 'package:flatmate/UserScreens/user_dashboard.dart';
 import 'package:flutter/material.dart';
 
-class ExpenseList extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: ExpenseListScreen(),
-    );
-  }
-}
-
+// Define the ExpenseItem class
 class ExpenseItem {
   String title;
   String description;
@@ -35,6 +26,9 @@ class ExpenseListScreen extends StatefulWidget {
 }
 
 class _ExpenseListScreenState extends State<ExpenseListScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  int _selectedIndex = 0;
+
   List<ExpenseItem> _expenses = [
     ExpenseItem(
       title: 'Cleaning',
@@ -72,6 +66,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
     double screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         backgroundColor: const Color(0xFF06001A),
         title: Text(
@@ -87,18 +82,18 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
           IconButton(
             icon: Icon(Icons.menu),
             onPressed: () {
-              // Add your logic for the menu action
+              _scaffoldKey.currentState
+                  ?.openEndDrawer(); // Open right-side drawer
             },
-          )
+          ),
         ],
       ),
+      endDrawer: _buildDrawer(screenWidth), // Right-side drawer
       body: Column(
         children: [
           Container(
             padding: EdgeInsets.symmetric(
-              vertical: 20,
-              horizontal: screenWidth * 0.05,
-            ),
+                vertical: 20, horizontal: screenWidth * 0.05),
             margin: EdgeInsets.all(screenWidth * 0.05),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -116,7 +111,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
               children: [
                 Icon(
                   Icons.sync,
-                  size: screenWidth * 0.12, // Responsive icon size
+                  size: screenWidth * 0.12,
                   color: Colors.amber,
                 ),
                 SizedBox(width: screenWidth * 0.05),
@@ -126,7 +121,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                     Text(
                       'Total Amount',
                       style: TextStyle(
-                        fontSize: screenWidth * 0.06, // Responsive text size
+                        fontSize: screenWidth * 0.06,
                         fontWeight: FontWeight.w600,
                         color: Colors.black87,
                       ),
@@ -135,7 +130,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                     Text(
                       '₹$_totalAmount',
                       style: TextStyle(
-                        fontSize: screenWidth * 0.1, // Responsive amount size
+                        fontSize: screenWidth * 0.1,
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
                       ),
@@ -157,30 +152,184 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 3,
-        selectedItemColor: Colors.purple,
-        unselectedItemColor: Colors.grey,
         onTap: (index) {
-          // Handle navigation
+          setState(() {
+            _selectedIndex = index;
+          });
+
+          // Add logic for navigation on different tabs
+          switch (index) {
+            case 0:
+              // If home is selected, you can refresh the HomePage or stay here
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => HomePage()),
+              );
+              break;
+            case 1:
+              // Navigate to Maintenance page when Maintenance tab is tapped
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => MaintenancePage()),
+              ).then((_) {
+                setState(() {
+                  _selectedIndex = 1; // Ensure the Maintenance tab is selected
+                });
+              });
+              break;
+            case 2:
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ComplaintsScreen()),
+              );
+              break;
+            case 3:
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ExpenseListScreen()),
+              );
+              break;
+          }
         },
+        selectedItemColor: const Color(0xFF31B3CD),
+        unselectedItemColor: Color.fromARGB(255, 128, 130, 132),
+        backgroundColor: Colors.white,
+        type: BottomNavigationBarType.fixed,
+        selectedFontSize: 16,
+        unselectedFontSize: 13,
         items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+            icon: Icon(Icons.home, size: 28),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.build),
+            icon: Icon(Icons.payment, size: 28),
             label: 'Maintenance',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.mail),
-            label: 'Complain Box',
+            icon: Icon(Icons.feedback, size: 28),
+            label: 'Complaints',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt),
+            icon: Icon(Icons.monetization_on, size: 28),
             label: 'Expense List',
           ),
         ],
+        iconSize: 30,
+        elevation: 10,
+        showUnselectedLabels: true,
       ),
+    );
+  }
+
+  Widget _buildDrawer(double screenWidth) {
+    return Drawer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: const Color(0xFF06001A),
+            ),
+            child: Center(
+              child: Column(
+                children: [
+                  SizedBox(height: 20),
+                  Container(
+                    width: screenWidth * 0.25,
+                    height: screenWidth * 0.25,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'HG',
+                        style: TextStyle(
+                          fontSize: screenWidth * 0.1,
+                          color: const Color(0xFF06001A),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: Container(
+              color: const Color(0xFFE9F2F9),
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: <Widget>[
+                  _buildDrawerItem(Icons.edit, 'Profile', context, () {
+                    // Navigate to Profile Page
+                  }),
+                  _buildDivider(),
+                  _buildDrawerItem(Icons.language, 'Language Settings', context,
+                      () {
+                    // Navigate to Language Settings Page
+                  }),
+                  _buildDivider(),
+                  _buildDrawerItem(Icons.security, 'Security Details', context,
+                      () {
+                    // Navigate to Security Details Page
+                  }),
+                  _buildDivider(),
+                  _buildDrawerItem(
+                      Icons.contact_phone, 'Contact Information', context, () {
+                    // Navigate to Contact Information Page
+                  }),
+                  _buildDivider(),
+                ],
+              ),
+            ),
+          ),
+          Column(
+            children: [
+              Divider(thickness: 2, color: const Color(0xFF06001A)),
+              ListTile(
+                leading: Icon(Icons.logout, color: const Color(0xFF06001A)),
+                title: Text('Logout',
+                    style: TextStyle(color: const Color(0xFF06001A))),
+                onTap: () {
+                  // Handle logout
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem(IconData icon, String title, BuildContext context,
+      [VoidCallback? onTap]) {
+    return ListTile(
+      leading: Icon(icon, color: const Color(0xFF06001A)),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: const Color(0xFF06001A),
+          fontSize: 16,
+        ),
+      ),
+      onTap: onTap ??
+          () {
+            // Default tap action (if not provided)
+          },
+    );
+  }
+
+  Widget _buildDivider() {
+    return Divider(
+      color: const Color(0xFF06001A),
+      thickness: 1.5,
+      indent: 20,
+      endIndent: 20,
     );
   }
 
@@ -188,14 +337,14 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
     double screenWidth = MediaQuery.of(context).size.width;
 
     return Card(
-      color: const Color(0xFFF8F8F8),
+      color: const Color(0xFFEDF8F8),
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Container(
         decoration: BoxDecoration(
           border: Border(
             left: BorderSide(
               color: const Color(0xFFD8AFCC),
-              width: screenWidth * 0.02, // Responsive border width
+              width: screenWidth * 0.02,
             ),
           ),
         ),
@@ -211,7 +360,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Colors.amber,
-                    fontSize: screenWidth * 0.04, // Responsive date size
+                    fontSize: screenWidth * 0.04,
                   ),
                 ),
                 ElevatedButton(
@@ -262,6 +411,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
     );
   }
 
+  // Helper widget to build the expense detail rows
   Widget _buildExpenseDetailRow({
     required IconData icon,
     required String label,
@@ -274,7 +424,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
           children: [
             Icon(
               icon,
-              size: screenWidth * 0.035, // Smaller icon size
+              size: screenWidth * 0.035,
               color: Color.fromARGB(255, 54, 54, 54),
             ),
             SizedBox(width: screenWidth * 0.02),
@@ -283,7 +433,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
               style: TextStyle(
                 fontWeight: FontWeight.w500,
                 color: Color.fromARGB(255, 54, 54, 54),
-                fontSize: screenWidth * 0.035, // Smaller font size
+                fontSize: screenWidth * 0.035,
                 letterSpacing: 0.5,
               ),
             ),
@@ -292,7 +442,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                 value,
                 style: TextStyle(
                   color: Color.fromARGB(221, 28, 27, 27),
-                  fontSize: screenWidth * 0.035, // Smaller font size
+                  fontSize: screenWidth * 0.035,
                   letterSpacing: 0.5,
                 ),
                 overflow: TextOverflow.ellipsis,

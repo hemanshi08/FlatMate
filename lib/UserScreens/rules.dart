@@ -24,15 +24,7 @@ class RulesPage extends StatelessWidget {
             Navigator.pop(context);
           },
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.menu),
-            color: Colors.white,
-            onPressed: () {
-              // Open drawer or menu
-            },
-          ),
-        ],
+        // 
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -47,7 +39,7 @@ class RulesPage extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                   fontSize: 20,
                   color: Colors.red, // Heading color set to blue
-                  decoration: TextDecoration.underline,
+                  // decoration: TextDecoration.underline,
                   decorationColor:
                       Colors.red, // Underline matches the heading color
                   decorationThickness: 2,

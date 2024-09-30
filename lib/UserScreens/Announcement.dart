@@ -50,15 +50,6 @@ class AnnouncementPage extends StatelessWidget {
             Navigator.pop(context);
           },
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.menu),
-            color: Colors.white,
-            onPressed: () {
-              // Open drawer or menu
-            },
-          ),
-        ],
       ),
       body: Padding(
         padding: EdgeInsets.all(screenWidth * 0.04), // Responsive padding
