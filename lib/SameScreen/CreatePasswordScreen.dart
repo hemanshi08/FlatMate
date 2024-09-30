@@ -1,4 +1,4 @@
-import 'package:flatmate/UserScreen/UserDashboard.dart';
+import 'package:flatmate/UserScreens/UserDashboard.dart';
 import 'package:flutter/material.dart';
 
 class CreatePasswordScreen extends StatefulWidget {
