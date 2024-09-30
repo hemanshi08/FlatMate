@@ -212,7 +212,7 @@ class _ResidentsPageState extends State<ResidentsPage> {
                       title: Text(
                         resident['ownerName']!,
                         style: TextStyle(
-                          fontSize: screenWidth * 0.05, // Responsive font size
+                          fontSize: screenWidth * 0.049, // Responsive font size
                         ),
                       ),
                       subtitle: Column(

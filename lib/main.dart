@@ -12,6 +12,8 @@ import 'package:flatmate_apartment/drawer/security_details.dart';
 // import 'package:flatmate_apartment/UserScreens/complain_screen.dart';
 import 'package:flutter/material.dart';
 import 'admin/admin_dashboard.dart';
+import 'admin/bottombar/admin_complain.dart';
+import 'admin/bottombar/admin_expense.dart';
 
 void main() {
   runApp(const MyApp());
@@ -28,7 +30,7 @@ class MyApp extends StatelessWidget {
           fontFamily: 'OpenSans',
         ),
         debugShowCheckedModeBanner: false,
-        home: HomePage() // Adjust this according to your app's homepage
+        home: AdminExpense() // Adjust this according to your app's homepage
         );
   }
 }
