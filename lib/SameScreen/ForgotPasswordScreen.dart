@@ -70,7 +70,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                       Text(
                         'Forgot Password',
                         style: TextStyle(
-                          fontSize: screenHeight * 0.042, // Adjust font size
+                          fontSize: screenWidth * 0.090, // Adjust font size
                           fontWeight: FontWeight.bold,
                           color: const Color(0xFFD8AFCC),
                         ),
@@ -136,8 +136,8 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                               child: Text(
                                 'Cancel',
                                 style: TextStyle(
-                                  fontSize:
-                                      screenHeight * 0.0243, // Adjust font size
+                                  fontSize: screenWidth * 0.046,
+                                  // Adjust font size
                                   color: Colors.white,
                                 ),
                               ),
@@ -169,8 +169,9 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                               child: Text(
                                 'Reset Password',
                                 style: TextStyle(
-                                  fontSize:
-                                      screenHeight * 0.0243, // Adjust font size
+                                  fontSize: screenWidth * 0.046,
+                                  //  fontWeight:
+                                  //    FontWeight.bold, // Adjust font size
                                   color: const Color(0xFF06001A),
                                 ),
                               ),

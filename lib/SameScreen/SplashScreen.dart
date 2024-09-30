@@ -83,8 +83,9 @@ class _SplashScreenState extends State<SplashScreen> {
               'FlatMate',
               style: TextStyle(
                 color: const Color(0xFFFFFFFF),
-                fontSize: screenHeight * 0.09,
+                fontSize: screenWidth * 0.16, // Adjust font size
                 fontWeight: FontWeight.bold,
+                letterSpacing: 1,
               ),
             ),
           ),
