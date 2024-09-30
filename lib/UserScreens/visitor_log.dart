@@ -8,17 +8,24 @@ class VisitorLogScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Visitor'),
+        // title: Text(
+        //   'Language',
+        //   style: TextStyle(
+        //     color: Colors.white,
+        //     fontSize: 26,
+        //     letterSpacing: 1,
+        //   ),
+        // ),
+        backgroundColor: const Color(0xFF06001A),
+        toolbarHeight: 60.0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
-          onPressed: () {},
+          color: Colors.white,
+          onPressed: () {
+            Navigator.pop(context);
+          },
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.menu),
-            onPressed: () {},
-          ),
-        ],
+        elevation: 0,
       ),
       body: Padding(
         padding: EdgeInsets.symmetric(
@@ -28,14 +35,20 @@ class VisitorLogScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'VISITOR LOG',
-              style: TextStyle(
-                fontSize: isSmallScreen ? 20 : 24,
-                fontWeight: FontWeight.bold,
+            // Title 'Select Language'
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Center(
+                child: Text(
+                  'VISITOR LOG',
+                  style: TextStyle(
+                    fontSize: 23,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
-            SizedBox(height: 16),
+            SizedBox(height: 20),
             Expanded(
               child: ListView(
                 children: [
@@ -109,7 +122,7 @@ class VisitorLogCard extends StatelessWidget {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: const Color(0xFFD8AFCC)),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Padding(
@@ -117,24 +130,37 @@ class VisitorLogCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Removed background color and set same font color for all labels
+            // Uniform color for all labels
             Text(
               type,
               style: TextStyle(
-                color: Colors.black, // Set a uniform color for all labels
+                color: Colors.black,
                 fontWeight: FontWeight.bold,
               ),
             ),
             SizedBox(height: 8),
-            Text(
-              visitorName,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: isSmallScreen ? 14 : 16,
-              ),
+            Row(
+              children: [
+                Icon(Icons.person,
+                    size: isSmallScreen ? 18 : 20), // Worker icon
+                SizedBox(width: 8),
+                Text(
+                  visitorName,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: isSmallScreen ? 14 : 16,
+                  ),
+                ),
+                SizedBox(width: 8),
+                Text(
+                  '(${occupation})', // Display occupation beside name
+                  style: TextStyle(
+                    fontSize: isSmallScreen ? 12 : 14,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
             ),
-            SizedBox(height: 4),
-            Text(occupation),
             SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
