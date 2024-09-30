@@ -1,5 +1,6 @@
 import 'package:flatmate/SameScreen/CreatePasswordScreen.dart';
 import 'package:flatmate/SameScreen/ForgotPasswordScreen.dart';
+import 'package:flatmate/admin/admin_dashboard.dart';
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -217,6 +218,16 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const CreatePasswordScreen()),
+      );
+    } else if (username == "admin" && password == "111") {
+      setState(() {
+        _message = "Login Successful";
+      });
+
+      // Navigate to CreatePasswordScreen on successful login
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => HomePage()),
       );
     } else {
       setState(() {

@@ -1,3 +1,7 @@
+import 'package:flatmate/drawer/contact_details.dart';
+import 'package:flatmate/drawer/language.dart';
+import 'package:flatmate/drawer/profile.dart';
+import 'package:flatmate/drawer/security_details.dart';
 import 'package:flutter/material.dart';
 import 'add_admin.dart';
 import 'admin_announcement.dart';
@@ -207,28 +211,26 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Drawer Header with Profile Initials
           Container(
             width: double.infinity,
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xFF06001A), // Dark background color
+              color: const Color(0xFF06001A),
             ),
             child: Center(
               child: Column(
                 children: [
-                  SizedBox(height: screenHeight * 0.05), // Space above HG
+                  SizedBox(height: screenHeight * 0.03),
                   Container(
                     width: screenWidth * 0.25,
                     height: screenWidth * 0.25,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius:
-                          BorderRadius.circular(10), // Rounded profile box
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: Center(
                       child: Text(
-                        'HG', // Initials
+                        'HG',
                         style: TextStyle(
                           fontSize: screenWidth * 0.1,
                           color: const Color(0xFF06001A),
@@ -237,32 +239,61 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   ),
-                  SizedBox(height: screenHeight * 0.05), // Space below HG
                 ],
               ),
             ),
           ),
-          // Drawer Items
           Expanded(
             child: Container(
-              color: const Color(
-                  0xFFE9F2F9), // Light blue background for the rest of the drawer
+              color: const Color(0xFFE9F2F9),
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: <Widget>[
-                  _buildDrawerItem(Icons.edit, 'Edit Profile'),
+                  _buildDrawerItem(Icons.edit, 'Profile', context, () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ProfilePage()),
+                    );
+                  }),
                   _buildDivider(),
-                  _buildDrawerItem(Icons.language, 'Language Settings'),
+                  _buildDrawerItem(Icons.language, 'Language Settings', context,
+                      () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => LanguageSelectionPage()),
+                    );
+                  }),
                   _buildDivider(),
-                  _buildDrawerItem(Icons.security, 'Security Details'),
+                  // _buildDrawerItem(Icons.lock, 'Change Password', context, () {
+                  //   Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(builder: (context) => ProfilePage()),
+                  //   );
+                  // }),
+                  // _buildDivider(),
+                  _buildDrawerItem(Icons.security, 'Security Details', context,
+                      () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => SecurityDetailsPage()),
+                    );
+                  }),
                   _buildDivider(),
-                  _buildDrawerItem(Icons.contact_phone, 'Contact Information'),
+                  _buildDrawerItem(
+                      Icons.contact_phone, 'Contact Information', context, () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ContactDetailsPage()),
+                    );
+                  }),
                   _buildDivider(),
                 ],
               ),
             ),
           ),
-          // Logout Button
           Column(
             children: [
               Divider(thickness: 2, color: const Color(0xFF06001A)),
@@ -281,8 +312,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Helper to build Drawer Items
-  Widget _buildDrawerItem(IconData icon, String title) {
+  Widget _buildDrawerItem(IconData icon, String title, BuildContext context,
+      [VoidCallback? onTap]) {
     return ListTile(
       leading: Icon(icon, color: const Color(0xFF06001A)),
       title: Text(
@@ -292,20 +323,17 @@ class _HomePageState extends State<HomePage> {
           fontSize: 16,
         ),
       ),
-      onTap: () {
-        // Handle each tap
-      },
+      onTap: onTap ??
+          () {
+            // Default tap action (if not provided)
+          },
     );
   }
 
-  // Divider for drawer items
   Widget _buildDivider() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Divider(
-        color: Colors.grey.shade400,
-        height: 0.5,
-      ),
+      child: Divider(color: Colors.black),
     );
   }
 }

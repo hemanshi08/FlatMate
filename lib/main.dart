@@ -32,6 +32,7 @@ class MyApp extends StatelessWidget {
         fontFamily: 'OpenSans',
       ),
       debugShowCheckedModeBanner: false,
+      home: SplashScreen(),
     );
   }
 }

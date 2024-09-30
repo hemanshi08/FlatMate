@@ -24,7 +24,7 @@ class RulesPage extends StatelessWidget {
             Navigator.pop(context);
           },
         ),
-        // 
+        //
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -114,9 +114,9 @@ class RuleCard extends StatelessWidget {
   }
 }
 
-  // void main() => runApp(MaterialApp(
-  //       theme: ThemeData(
-  //         primarySwatch: Colors.deepPurple,
-  //       ),
-  //       home: RulesPage(),
-  //     ));
+// void main() => runApp(MaterialApp(
+//       theme: ThemeData(
+//         primarySwatch: Colors.deepPurple,
+//       ),
+//       home: RulesPage(),
+//     ));
