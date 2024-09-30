@@ -312,15 +312,19 @@ class _AddAnnouncementScreenState extends State<AddAnnouncementScreen> {
 
   @override
   Widget build(BuildContext context) {
+    var screenWidth = MediaQuery.of(context).size.width;
+    var screenHeight = MediaQuery.of(context).size.height;
+
+    double paddingValue = screenWidth * 0.04;
+
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: 180, // Keep your toolbar height as you wanted
+        toolbarHeight: 180, // Custom toolbar height
         backgroundColor: const Color(0xFF06001A),
         automaticallyImplyLeading:
             false, // Disable default back button behavior
         flexibleSpace: Padding(
-          padding: const EdgeInsets.only(
-              left: 16, top: 50), // Adjust the left and top padding as needed
+          padding: const EdgeInsets.only(left: 16, top: 50), // Adjust padding
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -334,10 +338,7 @@ class _AddAnnouncementScreenState extends State<AddAnnouncementScreen> {
                   Navigator.pop(context);
                 },
               ),
-              // Title
-              SizedBox(
-                height: 10,
-              ), // This pushes the title towards the bottom
+              SizedBox(height: 10), // Add some space between the icon and title
               Center(
                 child: Text(
                   "Announcements",
@@ -349,94 +350,94 @@ class _AddAnnouncementScreenState extends State<AddAnnouncementScreen> {
                   ),
                 ),
               ),
-              Spacer(), // Optional: Adjust the spacing between the title and other elements if needed
+              Spacer(), // Adjust spacing
             ],
           ),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(36.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextFormField(
-                controller: _titleController,
-                decoration: InputDecoration(
-                  labelText: 'Title',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a title';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-              TextFormField(
-                controller: _dateController,
-                decoration: InputDecoration(
-                  labelText: 'Date',
-                  border: OutlineInputBorder(),
-                ),
-                readOnly: true,
-                onTap: () => _selectDate(context),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please select a date';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-              TextFormField(
-                controller: _detailsController,
-                decoration: InputDecoration(
-                  labelText: 'Details',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter details';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      widget.addAnnouncement({
-                        "title": _titleController.text,
-                        "date": _dateController.text,
-                        "details": _detailsController.text,
-                      });
-                      Navigator.pop(context);
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.all(paddingValue),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextFormField(
+                  controller: _titleController,
+                  decoration: InputDecoration(
+                    labelText: 'Title',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a title';
                     }
+                    return null;
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD8AFCC),
-                    padding: EdgeInsets.symmetric(
-                      vertical: 16.0,
-                    ),
+                ),
+                SizedBox(height: 16),
+                TextFormField(
+                  controller: _dateController,
+                  decoration: InputDecoration(
+                    labelText: 'Date',
+                    border: OutlineInputBorder(),
                   ),
-                  child: Text(
-                    'Submit',
-                    style: TextStyle(
-                      color: const Color(0xFF66123A),
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1,
+                  readOnly: true,
+                  onTap: () => _selectDate(context),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please select a date';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 16),
+                TextFormField(
+                  controller: _detailsController,
+                  decoration: InputDecoration(
+                    labelText: 'Details',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 3,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter details';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        widget.addAnnouncement({
+                          "title": _titleController.text,
+                          "date": _dateController.text,
+                          "details": _detailsController.text,
+                        });
+                        Navigator.pop(context);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD8AFCC),
+                      padding: EdgeInsets.symmetric(vertical: 16.0),
+                    ),
+                    child: Text(
+                      'Submit',
+                      style: TextStyle(
+                        color: const Color(0xFF66123A),
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
