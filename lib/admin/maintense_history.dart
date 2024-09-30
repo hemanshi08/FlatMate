@@ -32,6 +32,11 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
     super.initState();
     // Initially, the displayed list is the paid list
     displayedList = paidList;
+
+    // Add listener to the searchController to update the list when the text changes
+    searchController.addListener(() {
+      updateSearchResults(searchController.text);
+    });
   }
 
   void updateSearchResults(String query) {
@@ -50,6 +55,11 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
         }).toList();
       });
     }
+  }
+
+  // Function to clear the search field
+  void clearSearch() {
+    searchController.clear();
   }
 
   @override
@@ -77,18 +87,29 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(height: screenHeight * 0.01),
+            // Search TextField
             TextField(
               controller: searchController,
-              onChanged:
-                  updateSearchResults, // Update list when search input changes
               decoration: InputDecoration(
-                hintText: 'Search',
-                hintStyle: const TextStyle(
-                  fontWeight: FontWeight.bold,
+                hintText: 'Search by flat no. or owner name',
+                prefixIcon: Icon(Icons.search, color: Colors.black),
+                suffixIcon: IconButton(
+                  icon: Icon(Icons.clear, color: Colors.black),
+                  onPressed: clearSearch, // Clear search functionality
                 ),
-                prefixIcon: Icon(
-                  Icons.search,
-                  size: screenWidth * 0.07, // Increased size for bold effect
+                border: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.pink),
+                ),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(
+                      color: Colors.cyan), // Cyan border when focused
+                ),
+                contentPadding: EdgeInsets.symmetric(
+                  vertical: screenHeight * 0.02,
+                  horizontal: 16.0,
                 ),
               ),
             ),
@@ -107,16 +128,16 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
                     child: GestureDetector(
                       onTap: () {
                         setState(() {
-                          isPaidSelected = false;
-                          displayedList = unpaidList;
+                          isPaidSelected = true; // Select paid list
+                          displayedList = paidList;
                           updateSearchResults(searchController
-                              .text); // Apply search to unpaid list
+                              .text); // Apply search to paid list
                         });
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
-                          color: isPaidSelected == false
+                          color: isPaidSelected == true
                               ? const Color(0xFFD8AFCC)
                               : Colors.transparent,
                           borderRadius: const BorderRadius.only(
@@ -141,16 +162,16 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
                     child: GestureDetector(
                       onTap: () {
                         setState(() {
-                          isPaidSelected = true;
-                          displayedList = paidList;
+                          isPaidSelected = false; // Select unpaid list
+                          displayedList = unpaidList;
                           updateSearchResults(searchController
-                              .text); // Apply search to paid list
+                              .text); // Apply search to unpaid list
                         });
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
-                          color: isPaidSelected == true
+                          color: isPaidSelected == false
                               ? const Color(0xFFD8AFCC)
                               : Colors.transparent,
                           borderRadius: const BorderRadius.only(
