@@ -1,6 +1,7 @@
 import 'package:flatmate/UserScreens/maintanance_screen.dart';
 import 'package:flatmate/admin/admin_dashboard.dart';
 import 'package:flatmate/admin/bottombar/admin_complain.dart';
+import 'package:flatmate/admin/bottombar/admin_maintense.dart';
 import 'package:flutter/material.dart';
 
 import 'expense_form.dart';
@@ -285,7 +286,7 @@ class _AdminExpenseState extends State<AdminExpense> {
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
+        currentIndex: 3,
         onTap: (index) {
           setState(() {
             _selectedIndex = index;
@@ -303,7 +304,7 @@ class _AdminExpenseState extends State<AdminExpense> {
               // Navigate to Maintenance page when Maintenance tab is tapped
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => MaintenancePage()),
+                MaterialPageRoute(builder: (context) => MaintenanceScreen()),
               );
               break;
             case 2:

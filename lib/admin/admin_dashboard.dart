@@ -1,6 +1,7 @@
 import 'package:flatmate/UserScreens/maintanance_screen.dart';
 import 'package:flatmate/admin/bottombar/admin_complain.dart';
 import 'package:flatmate/admin/bottombar/admin_expense.dart';
+import 'package:flatmate/admin/bottombar/admin_maintense.dart';
 import 'package:flatmate/drawer/contact_details.dart';
 import 'package:flatmate/drawer/language.dart';
 import 'package:flatmate/drawer/profile.dart';
@@ -149,7 +150,7 @@ class _HomePageState extends State<HomePage> {
               // Navigate to Maintenance page when Maintenance tab is tapped
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => MaintenancePage()),
+                MaterialPageRoute(builder: (context) => MaintenanceScreen()),
               ).then((_) {
                 setState(() {
                   _selectedIndex = 1; // Ensure the Maintenance tab is selected

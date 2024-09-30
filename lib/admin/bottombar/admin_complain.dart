@@ -1,6 +1,7 @@
 import 'package:flatmate/UserScreens/maintanance_screen.dart';
 import 'package:flatmate/admin/admin_dashboard.dart';
 import 'package:flatmate/admin/bottombar/admin_expense.dart';
+import 'package:flatmate/admin/bottombar/admin_maintense.dart';
 import 'package:flutter/material.dart';
 
 class AdminComplain extends StatefulWidget {
@@ -234,7 +235,7 @@ class _AdminComplainState extends State<AdminComplain> {
               // Navigate to Maintenance page when Maintenance tab is tapped
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => MaintenancePage()),
+                MaterialPageRoute(builder: (context) => MaintenanceScreen()),
               );
               break;
             case 2:
