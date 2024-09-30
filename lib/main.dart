@@ -27,12 +27,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        theme: ThemeData(
-          //  fontFamily: 'Roboto', for global font family
-          fontFamily: 'OpenSans',
-        ),
-        debugShowCheckedModeBanner: false,
-        home: SplashScreen() // Adjust this according to your app's homepage
-        );
+      theme: ThemeData(
+        //  fontFamily: 'Roboto', for global font family
+        fontFamily: 'OpenSans',
+      ),
+      debugShowCheckedModeBanner: false,
+    );
   }
 }
