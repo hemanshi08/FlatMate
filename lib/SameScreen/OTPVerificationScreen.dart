@@ -163,9 +163,9 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
   }
 }
 
-void main() {
-  runApp(const MaterialApp(home: OTPVerificationScreen()));
-}
+// void main() {
+//   runApp(const MaterialApp(home: OTPVerificationScreen()));
+// }
 
 // TrianglePainter1 and TrianglePainter2 remain the same
 class TrianglePainter1 extends CustomPainter {

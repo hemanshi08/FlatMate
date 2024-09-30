@@ -1,4 +1,4 @@
-import 'package:flatmate/SameScreen/loginscreen.dart';
+import 'package:flatmate/SameScreen/LoginScreen.dart';
 import 'package:flutter/material.dart';
 
 class SplashScreen extends StatefulWidget {

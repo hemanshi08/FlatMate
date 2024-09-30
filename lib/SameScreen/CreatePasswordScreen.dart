@@ -1,4 +1,4 @@
-import 'package:flatmate/UserScreens/UserDashboard.dart';
+import 'package:flatmate/UserScreens/user_dashboard.dart';
 import 'package:flutter/material.dart';
 
 class CreatePasswordScreen extends StatefulWidget {
@@ -198,7 +198,7 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
       // If passwords match, navigate to the UserDashboardScreen
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const UserDashboard()),
+        MaterialPageRoute(builder: (context) => HomePage()),
       );
     } else {
       // Display error or handle accordingly

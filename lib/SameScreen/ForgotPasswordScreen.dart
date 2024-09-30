@@ -1,6 +1,8 @@
+
+import 'package:flatmate/SameScreen/LoginScreen.dart';
 import 'package:flatmate/SameScreen/OTPVerificationScreen.dart';
 import 'package:flutter/material.dart';
-import 'loginscreen.dart'; // Import your login screen file
+// Import your login screen file
 
 class ForgotPassword extends StatefulWidget {
   const ForgotPassword({super.key});
