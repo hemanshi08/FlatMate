@@ -6,9 +6,12 @@ import 'package:flatmate_apartment/UserScreens/residentdetails.dart';
 import 'package:flatmate_apartment/UserScreens/visitor_log.dart';
 import 'package:flatmate_apartment/drawer/contact_details.dart';
 import 'package:flatmate_apartment/drawer/language.dart';
+import 'package:flatmate_apartment/drawer/profile.dart';
+import 'package:flatmate_apartment/drawer/security_details.dart';
 
 // import 'package:flatmate_apartment/UserScreens/complain_screen.dart';
 import 'package:flutter/material.dart';
+import 'admin/admin_dashboard.dart';
 
 void main() {
   runApp(const MyApp());
@@ -42,7 +45,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       debugShowCheckedModeBanner: false,
-      home: VisitorLogScreen(),
+      home: HomePage(),
     );
   }
 }
