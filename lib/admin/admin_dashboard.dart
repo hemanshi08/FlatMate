@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'add_admin.dart';
 import 'admin_announcement.dart';
 import 'admin_rules.dart';
@@ -106,13 +105,20 @@ class _HomePageState extends State<HomePage> {
                     _buildGridItem(Icons.notifications_active, 'Announcement',
                         context, AnnouncementScreen()),
                     _buildGridItem(
-                        Icons.people, 'Residents', context, ResidentsScreen()),
+                        Icons.people, 'Residents', context, ResidentsPage()),
                     _buildGridItem(
                         Icons.badge, 'Visitor', context, VisitorScreen()),
                     _buildGridItem(Icons.history, 'Maintenance History',
                         context, MaintenanceHistoryScreen()), // New button
-                    _buildGridItem(Icons.person_add, 'Add Admin', context,
-                        AddAdminScreen()), // New button
+                    _buildGridItem(
+                      Icons.person_add,
+                      'Add Admin',
+                      context,
+                      AddAdminScreen(onMemberAdded: (memberData) {
+                        // Handle the new member data here
+                      }),
+                    ),
+// New button
                   ],
                 ),
               ),

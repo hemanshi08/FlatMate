@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
-class AddAdminScreen extends StatefulWidget {
+class AddMemberForm extends StatefulWidget {
   final Function(Map<String, String>) onMemberAdded;
 
-  const AddAdminScreen({Key? key, required this.onMemberAdded})
+  const AddMemberForm({Key? key, required this.onMemberAdded})
       : super(key: key);
 
   @override
-  _AddAdminScreenState createState() => _AddAdminScreenState();
+  _AddMemberFormState createState() => _AddMemberFormState();
 }
 
-class _AddAdminScreenState extends State<AddAdminScreen> {
+class _AddMemberFormState extends State<AddMemberForm> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _flatNoController = TextEditingController();
   final TextEditingController _ownerNameController = TextEditingController();
@@ -36,21 +36,15 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Get the screen width and height
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight:
-            screenHeight * 0.25, // Keep your toolbar height as you wanted
+        toolbarHeight: 180, // Keep your toolbar height as you wanted
         backgroundColor: const Color(0xFF06001A),
         automaticallyImplyLeading:
             false, // Disable default back button behavior
         flexibleSpace: Padding(
-          padding: EdgeInsets.only(
-              left: screenWidth * 0.04,
-              top: screenHeight * 0.05), // Adjust padding as needed
+          padding: const EdgeInsets.only(
+              left: 16, top: 50), // Adjust padding as needed
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -65,14 +59,14 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
                 },
               ),
               // Title
-              SizedBox(height: screenHeight * 0.02),
+              SizedBox(height: 10),
               Center(
                 child: Text(
-                  "Add Admin",
+                  "Add Member",
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: screenWidth * 0.08, // Responsive font size
+                    fontSize: 33,
                     letterSpacing: 1,
                   ),
                 ),
@@ -84,13 +78,12 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.all(screenWidth * 0.08), // Responsive padding
+          padding: const EdgeInsets.all(30.0),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: screenHeight * 0.02),
                 TextFormField(
                   controller: _flatNoController,
                   decoration: InputDecoration(labelText: 'Flat No'),
@@ -101,7 +94,6 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
                     return null;
                   },
                 ),
-                SizedBox(height: screenHeight * 0.02),
                 TextFormField(
                   controller: _ownerNameController,
                   decoration: InputDecoration(labelText: 'Owner Name'),
@@ -112,7 +104,6 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
                     return null;
                   },
                 ),
-                SizedBox(height: screenHeight * 0.02),
                 TextFormField(
                   controller: _peopleController,
                   decoration: InputDecoration(labelText: 'No. of People'),
@@ -123,7 +114,6 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
                     return null;
                   },
                 ),
-                SizedBox(height: screenHeight * 0.02),
                 TextFormField(
                   controller: _emailController,
                   decoration: InputDecoration(labelText: 'Email'),
@@ -135,7 +125,6 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
                     return null;
                   },
                 ),
-                SizedBox(height: screenHeight * 0.02),
                 TextFormField(
                   controller: _contactNoController,
                   decoration: InputDecoration(labelText: 'Contact No'),
@@ -161,14 +150,13 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
                     Text('Send Email'),
                   ],
                 ),
-                SizedBox(height: screenHeight * 0.02),
+                SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: _submitForm,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFD8AFCC),
                     padding: EdgeInsets.symmetric(
-                      vertical:
-                          screenHeight * 0.02, // Responsive button padding
+                      vertical: 16.0,
                     ),
                     minimumSize: Size(double.infinity, 50), // Full-width button
                   ),
@@ -176,7 +164,7 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
                     'Submit',
                     style: TextStyle(
                       color: const Color(0xFF66123A),
-                      fontSize: screenWidth * 0.045, // Responsive font size
+                      fontSize: 17,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1,
                     ),
