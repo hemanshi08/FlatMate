@@ -112,7 +112,7 @@ class _HomePageState extends State<HomePage> {
                     _buildGridItem(
                         Icons.people, 'Residents', context, ResidentsPage()),
                     _buildGridItem(
-                        Icons.badge, 'Visitor', context, VisitorScreen()),
+                        Icons.badge, 'Visitor', context, VisitorRecordScreen()),
                     _buildGridItem(Icons.history, 'Maintenance History',
                         context, MaintenanceHistoryScreen()), // New button
                     _buildGridItem(
