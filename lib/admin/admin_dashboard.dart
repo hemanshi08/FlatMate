@@ -1,3 +1,4 @@
+import 'package:flatmate/admin/admin_maintense.dart';
 import 'package:flatmate/drawer/contact_details.dart';
 import 'package:flatmate/drawer/language.dart';
 import 'package:flatmate/drawer/profile.dart';
@@ -136,29 +137,59 @@ class _HomePageState extends State<HomePage> {
           setState(() {
             _selectedIndex = index;
           });
+
+          // Add logic for navigation on different tabs
+          switch (index) {
+            case 0:
+              // If home is selected, you can refresh the HomePage or stay here
+              break;
+            case 1:
+              // Navigate to Maintenance page when Maintenance tab is tapped
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => MaintenanceScreen()),
+              ).then((_) {
+                setState(() {
+                  _selectedIndex = 1; // Ensure the Maintenance tab is selected
+                });
+              });
+              break;
+            case 2:
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => MaintenanceScreen()),
+              );
+              break;
+            case 3:
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => MaintenanceScreen()),
+              );
+              break;
+          }
         },
         selectedItemColor: const Color(0xFF31B3CD),
         unselectedItemColor: Color.fromARGB(255, 128, 130, 132),
         backgroundColor: Colors.white,
         type: BottomNavigationBarType.fixed,
-        selectedFontSize: 16, // Increased font size for labels
-        unselectedFontSize: 13, // Default font size for unselected labels
+        selectedFontSize: 16,
+        unselectedFontSize: 13,
         items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home, size: 28), // Increased icon size
-            label: 'Home', // Added colon to the label
+            icon: Icon(Icons.home, size: 28),
+            label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.payment, size: 28), // Updated Icon
-            label: 'Maintenance', // Updated Label
+            icon: Icon(Icons.payment, size: 28),
+            label: 'Maintenance',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.feedback, size: 28), // Increased icon size
-            label: 'Complaints', // Added colon to the label
+            icon: Icon(Icons.feedback, size: 28),
+            label: 'Complaints',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.monetization_on, size: 28), // Updated Icon
-            label: 'Expense List', // Updated Label
+            icon: Icon(Icons.monetization_on, size: 28),
+            label: 'Expense List',
           ),
         ],
         iconSize: 30,
