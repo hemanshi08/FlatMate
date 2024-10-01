@@ -2,6 +2,10 @@ import 'package:flatmate/UserScreens/maintanance_screen.dart';
 import 'package:flatmate/admin/admin_dashboard.dart';
 import 'package:flatmate/admin/bottombar/admin_complain.dart';
 import 'package:flatmate/admin/bottombar/admin_maintense.dart';
+import 'package:flatmate/drawer/contact_details.dart';
+import 'package:flatmate/drawer/language.dart';
+import 'package:flatmate/drawer/profile.dart';
+import 'package:flatmate/drawer/security_details.dart';
 import 'package:flutter/material.dart';
 
 import 'expense_form.dart';
@@ -63,7 +67,6 @@ class _AdminExpenseState extends State<AdminExpense> {
 
     return Scaffold(
       key: _scaffoldKey,
-
       appBar: AppBar(
         title: Text(
           'Expense List',
@@ -80,8 +83,7 @@ class _AdminExpenseState extends State<AdminExpense> {
           ),
         ],
       ),
-      endDrawer: _buildDrawer(screenWidth), // Right-side drawer
-
+      endDrawer: _buildDrawer(screenWidth, screenHeight),
       body: Padding(
         padding: EdgeInsets.all(screenWidth * 0.05),
         child: Column(
@@ -352,7 +354,7 @@ class _AdminExpenseState extends State<AdminExpense> {
     );
   }
 
-  Widget _buildDrawer(double screenWidth) {
+  Widget _buildDrawer(double screenWidth, double screenHeight) {
     return Drawer(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -366,7 +368,7 @@ class _AdminExpenseState extends State<AdminExpense> {
             child: Center(
               child: Column(
                 children: [
-                  SizedBox(height: 20),
+                  SizedBox(height: screenHeight * 0.03),
                   Container(
                     width: screenWidth * 0.25,
                     height: screenWidth * 0.25,
@@ -396,22 +398,44 @@ class _AdminExpenseState extends State<AdminExpense> {
                 padding: EdgeInsets.zero,
                 children: <Widget>[
                   _buildDrawerItem(Icons.edit, 'Profile', context, () {
-                    // Navigate to Profile Page
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ProfilePage()),
+                    );
                   }),
                   _buildDivider(),
                   _buildDrawerItem(Icons.language, 'Language Settings', context,
                       () {
-                    // Navigate to Language Settings Page
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => LanguageSelectionPage()),
+                    );
                   }),
                   _buildDivider(),
+                  // _buildDrawerItem(Icons.lock, 'Change Password', context, () {
+                  //   Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(builder: (context) => ProfilePage()),
+                  //   );
+                  // }),
+                  // _buildDivider(),
                   _buildDrawerItem(Icons.security, 'Security Details', context,
                       () {
-                    // Navigate to Security Details Page
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => SecurityDetailsPage()),
+                    );
                   }),
                   _buildDivider(),
                   _buildDrawerItem(
                       Icons.contact_phone, 'Contact Information', context, () {
-                    // Navigate to Contact Information Page
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ContactDetailsPage()),
+                    );
                   }),
                   _buildDivider(),
                 ],
@@ -455,11 +479,9 @@ class _AdminExpenseState extends State<AdminExpense> {
   }
 
   Widget _buildDivider() {
-    return Divider(
-      color: const Color(0xFF06001A),
-      thickness: 1.5,
-      indent: 20,
-      endIndent: 20,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Divider(color: Colors.black),
     );
   }
 }

@@ -1,6 +1,10 @@
 import 'package:flatmate/admin/admin_dashboard.dart';
 import 'package:flatmate/admin/bottombar/admin_complain.dart';
 import 'package:flatmate/admin/bottombar/admin_expense.dart';
+import 'package:flatmate/drawer/contact_details.dart';
+import 'package:flatmate/drawer/language.dart';
+import 'package:flatmate/drawer/profile.dart';
+import 'package:flatmate/drawer/security_details.dart';
 import 'package:flutter/material.dart';
 import 'maintense_request_form.dart'; // Ensure this import is present
 
@@ -45,7 +49,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
           ),
         ],
       ),
-      endDrawer: _buildDrawer(screenWidth), // Right-side drawer
+      endDrawer: _buildDrawer(screenWidth, screenHeight), // Right-side drawer
 
       body: Padding(
         padding: EdgeInsets.all(screenWidth * 0.05), // Responsive padding
@@ -203,7 +207,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
     );
   }
 
-  Widget _buildDrawer(double screenWidth) {
+  Widget _buildDrawer(double screenWidth, double screenHeight) {
     return Drawer(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -217,7 +221,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
             child: Center(
               child: Column(
                 children: [
-                  SizedBox(height: 20),
+                  SizedBox(height: screenHeight * 0.03),
                   Container(
                     width: screenWidth * 0.25,
                     height: screenWidth * 0.25,
@@ -247,22 +251,44 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                 padding: EdgeInsets.zero,
                 children: <Widget>[
                   _buildDrawerItem(Icons.edit, 'Profile', context, () {
-                    // Navigate to Profile Page
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ProfilePage()),
+                    );
                   }),
                   _buildDivider(),
                   _buildDrawerItem(Icons.language, 'Language Settings', context,
                       () {
-                    // Navigate to Language Settings Page
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => LanguageSelectionPage()),
+                    );
                   }),
                   _buildDivider(),
+                  // _buildDrawerItem(Icons.lock, 'Change Password', context, () {
+                  //   Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(builder: (context) => ProfilePage()),
+                  //   );
+                  // }),
+                  // _buildDivider(),
                   _buildDrawerItem(Icons.security, 'Security Details', context,
                       () {
-                    // Navigate to Security Details Page
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => SecurityDetailsPage()),
+                    );
                   }),
                   _buildDivider(),
                   _buildDrawerItem(
                       Icons.contact_phone, 'Contact Information', context, () {
-                    // Navigate to Contact Information Page
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ContactDetailsPage()),
+                    );
                   }),
                   _buildDivider(),
                 ],
@@ -306,81 +332,78 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
   }
 
   Widget _buildDivider() {
-    return Divider(
-      color: const Color(0xFF06001A),
-      thickness: 1.5,
-      indent: 20,
-      endIndent: 20,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Divider(color: Colors.black),
     );
   }
+}
 
-  // Maintenance card widget
-  Widget maintenanceCard(
-    double screenWidth,
-    double screenHeight,
-    double textScaleFactor,
-    String title,
-    String fee,
-    String date,
-    bool isPayable,
-  ) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: Padding(
-        padding: EdgeInsets.all(screenWidth * 0.05), // Responsive padding
-        child: Row(
-          children: [
-            Container(
-              height: 50,
-              width: 50,
-              decoration: BoxDecoration(
-                color: const Color(0xFFD8AFCC),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.check_circle,
-                color: Colors.white,
-                size: 30,
-              ),
+// Maintenance card widget
+Widget maintenanceCard(
+  double screenWidth,
+  double screenHeight,
+  double textScaleFactor,
+  String title,
+  String fee,
+  String date,
+  bool isPayable,
+) {
+  return Card(
+    elevation: 2,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    child: Padding(
+      padding: EdgeInsets.all(screenWidth * 0.05), // Responsive padding
+      child: Row(
+        children: [
+          Container(
+            height: 50,
+            width: 50,
+            decoration: BoxDecoration(
+              color: const Color(0xFFD8AFCC),
+              borderRadius: BorderRadius.circular(8),
             ),
-            SizedBox(
-                width: screenWidth * 0.04), // Spacing between icon and text
+            child: Icon(
+              Icons.check_circle,
+              color: Colors.white,
+              size: 30,
+            ),
+          ),
+          SizedBox(width: screenWidth * 0.04), // Spacing between icon and text
 
-            // Maintenance Details
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: screenWidth * 0.045, // Responsive font size
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.2,
-                    ),
+          // Maintenance Details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: screenWidth * 0.045, // Responsive font size
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.2,
                   ),
-                  Text(
-                    fee,
-                    style: TextStyle(
-                      fontSize: screenWidth * 0.04, // Responsive font size
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.2,
-                    ),
+                ),
+                Text(
+                  fee,
+                  style: TextStyle(
+                    fontSize: screenWidth * 0.04, // Responsive font size
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.2,
                   ),
-                  Text(
-                    date,
-                    style: TextStyle(
-                      fontSize: screenWidth * 0.04, // Responsive font size
-                      color: Colors.grey,
-                    ),
+                ),
+                Text(
+                  date,
+                  style: TextStyle(
+                    fontSize: screenWidth * 0.04, // Responsive font size
+                    color: Colors.grey,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
 }

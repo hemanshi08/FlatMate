@@ -2,6 +2,10 @@ import 'package:flatmate/UserScreens/expense_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flatmate/UserScreens/maintanance_screen.dart';
 import 'package:flatmate/UserScreens/user_dashboard.dart';
+import 'package:flatmate/drawer/contact_details.dart';
+import 'package:flatmate/drawer/language.dart';
+import 'package:flatmate/drawer/profile.dart';
+import 'package:flatmate/drawer/security_details.dart';
 
 void main() => runApp(ComplaintsApp());
 
@@ -296,22 +300,44 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
                 padding: EdgeInsets.zero,
                 children: <Widget>[
                   _buildDrawerItem(Icons.edit, 'Profile', context, () {
-                    // Navigate to Profile Page
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ProfilePage()),
+                    );
                   }),
                   _buildDivider(),
                   _buildDrawerItem(Icons.language, 'Language Settings', context,
                       () {
-                    // Navigate to Language Settings Page
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => LanguageSelectionPage()),
+                    );
                   }),
                   _buildDivider(),
+                  // _buildDrawerItem(Icons.lock, 'Change Password', context, () {
+                  //   Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(builder: (context) => ProfilePage()),
+                  //   );
+                  // }),
+                  // _buildDivider(),
                   _buildDrawerItem(Icons.security, 'Security Details', context,
                       () {
-                    // Navigate to Security Details Page
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => SecurityDetailsPage()),
+                    );
                   }),
                   _buildDivider(),
                   _buildDrawerItem(
                       Icons.contact_phone, 'Contact Information', context, () {
-                    // Navigate to Contact Information Page
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ContactDetailsPage()),
+                    );
                   }),
                   _buildDivider(),
                 ],
