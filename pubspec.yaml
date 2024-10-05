@@ -31,7 +31,8 @@ dependencies:
   flutter:
     sdk: flutter
   url_launcher: ^6.0.20  # Replace with the latest version
-  font_awesome_flutter: ^10.5.0  # Check for the latest version on pub.dev
+  font_awesome_flutter: ^10.5.0  # Check for the latest version on pub.dev  
+  # cloud_firestore: ^4.10.0
 
 
 
