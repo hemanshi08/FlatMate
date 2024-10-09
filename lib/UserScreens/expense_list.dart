@@ -392,7 +392,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                 ElevatedButton(
                   onPressed: () {},
                   style: ElevatedButton.styleFrom(
-                    primary: const Color(0xFF43DBF8),
+                    backgroundColor: const Color(0xFF43DBF8),
                   ),
                   child: Text(
                     'Download',

@@ -234,7 +234,7 @@ class OnlinePaymentScreen extends StatelessWidget {
                 }
               },
               style: ElevatedButton.styleFrom(
-                primary: const Color(0xFFD8AFCC), // Background color
+                backgroundColor: const Color(0xFFD8AFCC), // Background color
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
