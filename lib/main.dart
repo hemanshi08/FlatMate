@@ -1,5 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flatmate/data/database_service.dart';
 import 'firebase_options.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 import 'package:flatmate/SameScreen/CreatePasswordScreen.dart';
 import 'package:flatmate/SameScreen/ForgotPasswordScreen.dart';
@@ -21,14 +23,12 @@ import 'package:flatmate/drawer/language.dart';
 import 'package:flutter/material.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Ensure widget binding is initialized
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  DatabaseService dbService = DatabaseService();
+
   runApp(MyApp());
 }
-
-
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
