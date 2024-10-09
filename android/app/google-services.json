@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "628236276796",
+    "project_id": "flatmate-aef67",
+    "storage_bucket": "flatmate-aef67.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:628236276796:android:5fd0aae750482c89c0df39",
+        "android_client_info": {
+          "package_name": "com.example.flatmate"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDWZmporkHNiF_rE3h41Nrohy_CYBXEzBs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
