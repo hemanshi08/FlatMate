@@ -53,6 +53,7 @@ class _AdminComplainState extends State<AdminComplain> {
       key: _scaffoldKey,
 
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text(
           'Complaints',
           style: TextStyle(
@@ -64,21 +65,16 @@ class _AdminComplainState extends State<AdminComplain> {
         backgroundColor: const Color(0xFF06001A),
         toolbarHeight: screenHeight * 0.08,
         actions: [
-          IconButton(
-            icon: Icon(Icons.menu),
-            onPressed: () {
-              _scaffoldKey.currentState
-                  ?.openEndDrawer(); // Open right-side drawer
-            },
+          Builder(
+            builder: (context) => IconButton(
+              icon: Icon(Icons.menu, color: Colors.white),
+              iconSize: screenWidth * 0.095,
+              onPressed: () {
+                Scaffold.of(context).openEndDrawer();
+              },
+            ),
           ),
         ],
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          color: Colors.white,
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
         elevation: 0,
       ),
       endDrawer: _buildDrawer(screenWidth, screenHeight), // Right-side drawer

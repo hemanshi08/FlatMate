@@ -49,6 +49,7 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
 
       appBar: AppBar(
         backgroundColor: const Color(0xFF06001A),
+        automaticallyImplyLeading: false,
         title: Text(
           'Complains',
           style: TextStyle(
@@ -59,12 +60,14 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
         ),
         toolbarHeight: 60.0,
         actions: [
-          IconButton(
-            icon: Icon(Icons.menu),
-            onPressed: () {
-              _scaffoldKey.currentState
-                  ?.openEndDrawer(); // Open right-side drawer
-            },
+          Builder(
+            builder: (context) => IconButton(
+              icon: Icon(Icons.menu, color: Colors.white),
+              iconSize: screenWidth * 0.095,
+              onPressed: () {
+                Scaffold.of(context).openEndDrawer();
+              },
+            ),
           ),
         ],
       ),

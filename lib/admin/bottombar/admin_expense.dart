@@ -68,20 +68,29 @@ class _AdminExpenseState extends State<AdminExpense> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text(
           'Expense List',
-          style: TextStyle(fontSize: screenWidth * 0.06),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            letterSpacing: 1,
+          ),
         ),
         backgroundColor: const Color(0xFF06001A),
+        toolbarHeight: screenHeight * 0.08,
         actions: [
-          IconButton(
-            icon: Icon(Icons.menu),
-            onPressed: () {
-              _scaffoldKey.currentState
-                  ?.openEndDrawer(); // Open right-side drawer
-            },
+          Builder(
+            builder: (context) => IconButton(
+              icon: Icon(Icons.menu, color: Colors.white),
+              iconSize: screenWidth * 0.095,
+              onPressed: () {
+                Scaffold.of(context).openEndDrawer();
+              },
+            ),
           ),
         ],
+        elevation: 0,
       ),
       endDrawer: _buildDrawer(screenWidth, screenHeight),
       body: Padding(
@@ -196,7 +205,7 @@ class _AdminExpenseState extends State<AdminExpense> {
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              SizedBox(height: screenHeight * 0.02),
+                              SizedBox(height: screenHeight * 0.01),
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
