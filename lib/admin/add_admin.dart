@@ -35,20 +35,29 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
         'username': 'admin_${_flatNoController.text}', // Generate username
       };
 
-      // Generate a new unique key for the admin
-      String adminId = _database.child("admin").push().key!;
+      // Check the current admin count
+      _database.child("admin").get().then((snapshot) {
+        int adminCount =
+            1; // Start count from 1 to generate admin_002 and so on.
 
-      // Save the new admin data to Firebase with admin_id
-      _database.child("admin").child(adminId).set({
-        ...newAdmin,
-        'admin_id': adminId, // Use unique admin_id
-      }).then((_) {
-        // Notify the parent widget about the new admin addition
-        widget.onMemberAdded(newAdmin);
-        print("Admin added to Firebase successfully.");
-        Navigator.pop(context); // Close the form screen
-      }).catchError((error) {
-        print("Failed to add admin: $error");
+        // Update the admin count if entries exist
+        if (snapshot.exists && snapshot.value != null) {
+          adminCount = (snapshot.value as Map).length + 1;
+        }
+
+        // Generate the unique admin_id with padding, e.g., "admin_002"
+        final adminId = 'admin_${adminCount.toString().padLeft(3, '0')}';
+
+        // Save the new admin data with generated admin_id
+        _database.child("admin").child(adminId).set({
+          ...newAdmin,
+          'admin_id': adminId,
+        }).then((_) {
+          widget.onMemberAdded(newAdmin); // Notify parent widget
+          Navigator.pop(context); // Close form screen
+        }).catchError((error) {
+          print("Failed to add admin: $error");
+        });
       });
     }
   }
