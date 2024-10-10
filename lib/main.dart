@@ -1,6 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flatmate/SameScreen/CreatePasswordScreen.dart';
 import 'package:flatmate/SameScreen/ForgotPasswordScreen.dart';
 import 'package:flatmate/SameScreen/LoginScreen.dart';
@@ -21,14 +21,13 @@ import 'package:flatmate/drawer/language.dart';
 import 'package:flutter/material.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Ensure widget binding is initialized
+  WidgetsFlutterBinding
+      .ensureInitialized(); // Ensure widget binding is initialized
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   runApp(MyApp());
 }
-
-
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
