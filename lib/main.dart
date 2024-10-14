@@ -1,9 +1,13 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flatmate/data/database_service.dart';
+import 'firebase_options.dart';
+import 'package:firebase_database/firebase_database.dart';
+
 import 'package:flatmate/SameScreen/CreatePasswordScreen.dart';
 import 'package:flatmate/SameScreen/ForgotPasswordScreen.dart';
 import 'package:flatmate/SameScreen/LoginScreen.dart';
 import 'package:flatmate/SameScreen/SplashScreen.dart';
 import 'package:flatmate/UserScreens/user_dashboard.dart';
-
 import 'package:flatmate/UserScreens/Announcement.dart';
 import 'package:flatmate/UserScreens/complain_first.dart';
 import 'package:flatmate/UserScreens/expense_list.dart';
@@ -17,8 +21,12 @@ import 'package:flatmate/drawer/language.dart';
 
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  DatabaseService dbService = DatabaseService();
+
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
