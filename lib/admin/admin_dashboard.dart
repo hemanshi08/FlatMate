@@ -30,10 +30,11 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: const Color(0xFF06001A),
         elevation: 0,
         title: Text(
-          'FlatMate',
+          ' FlatMate',
           style: TextStyle(
             color: Colors.white,
             fontSize:
