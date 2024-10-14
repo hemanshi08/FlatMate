@@ -8,6 +8,7 @@ import 'package:flatmate/data/OwnerProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,6 +26,24 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  @override
+  void initState() {
+    super.initState();
+    _checkSavedAdminSession(); // Add the session check here
+  }
+
+  Future<void> _checkSavedAdminSession() async {
+    String? savedAdminId = await SessionManager.getAdminId();
+    if (savedAdminId != null && await SessionManager.isAdminSessionValid(30)) {
+      // Assuming 30 minutes validity
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomePageA(), // No need to pass ownerName
+        ),
+      );
+    }
+  }
   // final DatabaseService _databaseService =
   //     DatabaseService(); // Initialize the service
 
@@ -209,18 +228,18 @@ class _LoginScreenState extends State<LoginScreen> {
         String dbPassword = adminData['password'];
 
         if (dbPassword == password) {
-          // Fetch ownerName directly from the adminData
-          String ownerName = adminData['ownerName'] ??
-              'Unknown Owner'; // Fetch ownerName from adminData
-          print('Navigating to admin dashboard: $ownerName'); // Debugging
+          // Fetch admin ID from the admin data
+          String adminID = adminData['admin_id']; // Accessing admin_id directly
 
-          // Save session using SessionManager
-          await SessionManager.saveAdminSession(username);
+          // Save the admin ID to Shared Preferences
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.setString('admin_id', adminID); // Saving the admin ID
 
-          Navigator.push(
+          // Navigate to HomePageA without passing ownerName
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => HomePageA(ownerName: ownerName),
+              builder: (context) => HomePageA(), // No ownerName needed here
             ),
           );
         } else {

@@ -37,12 +37,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(
-        
         //  fontFamily: 'Roboto', for global font family
         fontFamily: 'OpenSans',
       ),
       debugShowCheckedModeBanner: false,
-      
       home: SplashScreen(),
     );
   }

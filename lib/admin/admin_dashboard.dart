@@ -16,11 +16,10 @@ import 'maintense_history.dart';
 import 'resident_details.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flatmate/data/database_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePageA extends StatefulWidget {
-  final String? ownerName; // The owner name passed from login
-
-  HomePageA({super.key, this.ownerName}); // Constructor updated with ownerName
+  const HomePageA({super.key});
 
   @override
   _HomePageAState createState() => _HomePageAState();
@@ -31,6 +30,30 @@ class _HomePageAState extends State<HomePageA> {
       DatabaseService(); // Create an instance of DatabaseService
 
   int _selectedIndex = 0;
+
+  String? ownerName; // To store the fetched owner name
+  String? adminId; // To store the admin ID
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOwnerDetails(); // Load the owner details when the widget initializes
+  }
+
+  // Fetch the admin ID and owner's name from shared preferences
+  Future<void> _loadOwnerDetails() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    adminId = prefs.getString('admin_id');
+
+    if (adminId != null) {
+      String? fetchedOwnerName =
+          await _databaseService.getOwnerNameByAdminId(adminId!);
+
+      setState(() {
+        ownerName = fetchedOwnerName ?? 'Owner';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -87,11 +110,10 @@ class _HomePageAState extends State<HomePageA> {
               ),
             ),
             Text(
-              widget.ownerName ?? '', // Dynamically display the ownerName
+              ownerName ?? '', // Dynamically display the owner name
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize:
-                    screenWidth * 0.08, // Font size is 8% of the screen width
+                fontSize: screenWidth * 0.08,
                 color: const Color(0xFF31B3CD),
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1,

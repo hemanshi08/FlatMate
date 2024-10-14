@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class DatabaseService {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
   final DatabaseReference _rulesRef =
       FirebaseDatabase.instance.ref().child('rules');
@@ -12,13 +13,16 @@ class DatabaseService {
   // Function to validate admin credentials
   Future<Map<String, dynamic>?> getAdminCredentials(String username) async {
     try {
-      DatabaseEvent event =
-          await _adminRef.orderByChild("username").equalTo(username).once();
+      DatabaseEvent event = await _adminRef
+          .orderByChild("username")
+          .equalTo(username)
+          .once(); // Assuming you log in with username
 
       if (event.snapshot.exists) {
         final data = event.snapshot.value;
         if (data is Map<dynamic, dynamic> && data.isNotEmpty) {
-          return Map<String, dynamic>.from(data.values.first);
+          return Map<String, dynamic>.from(
+              data.values.first); // Returns admin data
         }
       }
       print("No admin found for username: $username");
@@ -48,6 +52,28 @@ class DatabaseService {
       return null;
     } catch (e) {
       print("Error fetching user data: $e");
+      return null;
+    }
+  }
+
+  // Method to fetch the owner's name using the admin ID
+  Future<String?> getOwnerNameByAdminId(String adminId) async {
+    try {
+      DatabaseEvent event =
+          await _adminRef.orderByChild("admin_id").equalTo(adminId).once();
+
+      if (event.snapshot.exists) {
+        final data = event.snapshot.value;
+        if (data is Map<dynamic, dynamic> && data.isNotEmpty) {
+          return Map<String, dynamic>.from(
+              data.values.first)['ownerName']; // Return the owner's name
+        }
+      } else {
+        print("No owner found for adminId: $adminId");
+        return null;
+      }
+    } catch (e) {
+      print("Error fetching owner name: $e");
       return null;
     }
   }
@@ -142,16 +168,12 @@ class DatabaseService {
     }
   }
 
-  // Method to handle logout
-  Future<void> logout(BuildContext context, Widget loginScreen) async {
-    try {
-      await FirebaseAuth.instance.signOut();
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => loginScreen),
-        (Route<dynamic> route) => false,
-      );
-    } catch (e) {
-      print('Error signing out: $e');
-    }
+  // Existing method for logging out
+  void logout(BuildContext context, Widget loginScreen) async {
+    await _auth.signOut();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => loginScreen),
+    );
   }
 }
