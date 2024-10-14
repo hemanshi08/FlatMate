@@ -8,6 +8,8 @@ class DatabaseService {
       FirebaseDatabase.instance.ref().child('rules');
   final DatabaseReference _adminRef =
       FirebaseDatabase.instance.ref().child('admin');
+  final DatabaseReference _residentsRef =
+      FirebaseDatabase.instance.ref().child('residents');
 
   // Function to validate admin credentials
   Future<Map<String, dynamic>?> getAdminCredentials(String username) async {
@@ -33,7 +35,7 @@ class DatabaseService {
   Future<Map<String, dynamic>?> getUserCredentials(String username) async {
     try {
       DatabaseEvent event = await _database
-          .child("users")
+          .child("residents") // Ensure this matches your Firebase structure
           .orderByChild("username")
           .equalTo(username)
           .once();
@@ -41,6 +43,7 @@ class DatabaseService {
       if (event.snapshot.exists) {
         final data = event.snapshot.value;
         if (data is Map<dynamic, dynamic> && data.isNotEmpty) {
+          // Assuming each user has a unique username and this returns their data
           return Map<String, dynamic>.from(data.values.first);
         }
       }
@@ -58,7 +61,6 @@ class DatabaseService {
       await _rulesRef.push().set({
         'title': title,
         'description': description,
-        // Removed the 'addedBy' field
       });
       print("Rule added successfully: $title");
     } catch (e) {
@@ -108,7 +110,6 @@ class DatabaseService {
           for (var ruleEntry in rulesData.entries) {
             var ruleId = ruleEntry.key;
 
-            // Remove the 'addedBy' field
             await _rulesRef.child(ruleId).child('addedBy').remove();
             print("Removed 'addedBy' from rule ID: $ruleId");
           }
@@ -154,4 +155,6 @@ class DatabaseService {
       print('Error signing out: $e');
     }
   }
+
+  // Function to add a new resident with flat_no field
 }

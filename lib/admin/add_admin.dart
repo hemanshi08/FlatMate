@@ -2,8 +2,6 @@ import 'dart:math';
 import 'package:flatmate/email_service.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
-import '../email_service.dart'; // Import the email service
-import 'dart:math';
 
 class AddAdminScreen extends StatefulWidget {
   final Function(Map<String, String>) onMemberAdded;
@@ -21,28 +19,72 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
   final TextEditingController _peopleController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _contactNoController = TextEditingController();
-  bool _isSendingEmail = false; // Loading state
-
+  bool _isSendingEmail = false;
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
+  String newAdminId = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _generateAdminId();
+  }
+
+  Future<void> _generateAdminId() async {
+    final adminsSnapshot = await _database.child("admin").once();
+    final adminsMap = adminsSnapshot.snapshot.value as Map<dynamic, dynamic>?;
+
+    if (adminsMap != null) {
+      int highestId = 1;
+
+      adminsMap.forEach((key, value) {
+        String adminId = key;
+        if (adminId.startsWith('admin_')) {
+          int idNumber = int.parse(adminId.split('_')[1]);
+          if (idNumber > highestId) {
+            highestId = idNumber;
+          }
+        }
+      });
+
+      newAdminId = 'admin_${(highestId + 1).toString().padLeft(3, '0')}';
+    } else {
+      newAdminId = 'admin_001';
+    }
+  }
 
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
-        _isSendingEmail = true; // Show loading
+        _isSendingEmail = true;
       });
-
-      final newAdmin = {
-        'flatNo': _flatNoController.text,
-        'ownerName': _ownerNameController.text,
-        'people': _peopleController.text,
-        'email': _emailController.text,
-        'contactNo': _contactNoController.text,
-        'username': 'admin_${_flatNoController.text}', // Generate username
-      };
 
       final email = _emailController.text;
       final flatNo = _flatNoController.text;
+
+      final emailExists = await _checkIfEmailExists(email);
+      if (emailExists) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text('Email must be unique. This email already exists.')),
+        );
+        setState(() {
+          _isSendingEmail = false;
+        });
+        return;
+      }
+
       final username = 'admin_$flatNo';
+
+      final newAdmin = {
+        'flatNo': flatNo,
+        'ownerName': _ownerNameController.text,
+        'people': _peopleController.text,
+        'email': email,
+        'contactNo': _contactNoController.text,
+        'username': username,
+      };
+
       final password = _generateRandomPassword();
 
       try {
@@ -53,24 +95,37 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
           ownerName: _ownerNameController.text,
         );
 
-        // Add admin to Firebase only if email sends successfully
-        await _addAdminToDatabase(newAdmin, password); // Pass password here
+        await _addAdminToDatabase(newAdmin, password);
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Admin added and email sent successfully')),
         );
-        widget.onMemberAdded(newAdmin); // Notify parent widget
-        Navigator.pop(context); // Close form screen
+        widget.onMemberAdded(newAdmin);
+        Navigator.pop(context);
       } catch (error) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $error')),
         );
       } finally {
         setState(() {
-          _isSendingEmail = false; // Reset loading
+          _isSendingEmail = false;
         });
       }
     }
+  }
+
+  Future<bool> _checkIfEmailExists(String email) async {
+    final adminsSnapshot = await _database.child("admin").once();
+    final adminsMap = adminsSnapshot.snapshot.value as Map<dynamic, dynamic>?;
+
+    if (adminsMap != null) {
+      for (var value in adminsMap.values) {
+        if (value['email'] == email) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   Future<void> _sendEmailToAdmin({
@@ -90,9 +145,10 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
 
   Future<void> _addAdminToDatabase(
       Map<String, String> adminData, String password) async {
-    await _database.child("admin").push().set({
+    await _database.child("admin").child(newAdminId).set({
       ...adminData,
-      'password': password, // Store the password in the database
+      'admin_id': newAdminId,
+      'password': password,
     });
   }
 
@@ -191,7 +247,7 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
                 SizedBox(height: screenHeight * 0.02),
                 Center(
                   child: _isSendingEmail
-                      ? CircularProgressIndicator() // Show loading indicator
+                      ? CircularProgressIndicator()
                       : ElevatedButton(
                           onPressed: _submitForm,
                           child: Text('Send Email'),
