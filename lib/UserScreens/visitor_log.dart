@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class VisitorLogScreen extends StatelessWidget {
+  const VisitorLogScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -107,7 +109,7 @@ class VisitorLogCard extends StatelessWidget {
   final String departureTime;
   final bool isSmallScreen;
 
-  const VisitorLogCard({
+  const VisitorLogCard({super.key, 
     required this.type,
     required this.visitorName,
     required this.occupation,
@@ -153,7 +155,7 @@ class VisitorLogCard extends StatelessWidget {
                 ),
                 SizedBox(width: 8),
                 Text(
-                  '(${occupation})', // Display occupation beside name
+                  '($occupation)', // Display occupation beside name
                   style: TextStyle(
                     fontSize: isSmallScreen ? 12 : 14,
                     color: Colors.grey.shade600,

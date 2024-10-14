@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class RulesPage extends StatelessWidget {
+  const RulesPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -78,7 +80,7 @@ class RuleCard extends StatelessWidget {
   final String text;
   final double screenWidth;
 
-  const RuleCard({
+  const RuleCard({super.key, 
     required this.text,
     required this.screenWidth,
   });

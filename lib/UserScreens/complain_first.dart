@@ -10,6 +10,8 @@ import 'package:flatmate/drawer/security_details.dart';
 void main() => runApp(ComplaintsApp());
 
 class ComplaintsApp extends StatelessWidget {
+  const ComplaintsApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -20,6 +22,8 @@ class ComplaintsApp extends StatelessWidget {
 }
 
 class ComplaintsScreen extends StatefulWidget {
+  const ComplaintsScreen({super.key});
+
   @override
   _ComplaintsScreenState createState() => _ComplaintsScreenState();
 }
@@ -444,6 +448,8 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
 }
 
 class ComplaintFormScreen extends StatefulWidget {
+  const ComplaintFormScreen({super.key});
+
   @override
   _ComplaintFormScreenState createState() => _ComplaintFormScreenState();
 }
@@ -647,8 +653,8 @@ class ComplaintsListView extends StatelessWidget {
   final bool isSolved;
   final Function(Map<String, String>) onComplaintSelected;
 
-  ComplaintsListView(
-      {required this.isSolved, required this.onComplaintSelected});
+  const ComplaintsListView(
+      {super.key, required this.isSolved, required this.onComplaintSelected});
 
   @override
   Widget build(BuildContext context) {

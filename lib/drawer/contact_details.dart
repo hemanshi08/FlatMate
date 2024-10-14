@@ -22,6 +22,8 @@ class ContactDetailsPage extends StatelessWidget {
     ),
   ];
 
+  ContactDetailsPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -92,7 +94,7 @@ class ContactInfo {
 class ContactRow extends StatelessWidget {
   final ContactInfo contact;
 
-  ContactRow({required this.contact});
+  const ContactRow({super.key, required this.contact});
 
   @override
   Widget build(BuildContext context) {

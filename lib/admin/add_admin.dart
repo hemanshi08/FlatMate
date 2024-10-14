@@ -3,12 +3,12 @@ import 'package:flatmate/email_service.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../email_service.dart'; // Import the email service
+import 'dart:math';
 
 class AddAdminScreen extends StatefulWidget {
   final Function(Map<String, String>) onMemberAdded;
 
-  const AddAdminScreen({Key? key, required this.onMemberAdded})
-      : super(key: key);
+  const AddAdminScreen({super.key, required this.onMemberAdded});
 
   @override
   _AddAdminScreenState createState() => _AddAdminScreenState();
@@ -168,9 +168,11 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
                 TextFormField(
                   controller: _peopleController,
                   decoration: InputDecoration(labelText: 'No. of People'),
-                  validator: (value) => value!.isEmpty
-                      ? 'Please enter the number of people'
-                      : null,
+                  keyboardType: TextInputType.number,
+                  validator: (value) =>
+                      value!.isEmpty || !RegExp(r'^\d+$').hasMatch(value)
+                          ? 'Please enter the number of people in digits'
+                          : null,
                 ),
                 SizedBox(height: screenHeight * 0.02),
                 TextFormField(

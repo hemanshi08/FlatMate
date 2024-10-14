@@ -5,9 +5,8 @@ import '../email_service.dart'; // Import the updated email service
 class AddMemberForm extends StatefulWidget {
   final Function(Map<String, String>) onMemberAdded;
 
-  const AddMemberForm({Key? key, required this.onMemberAdded})
-      : super(key: key);
-
+  const AddMemberForm({super.key, required this.onMemberAdded});
+            
   @override
   _AddMemberFormState createState() => _AddMemberFormState();
 }

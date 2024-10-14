@@ -22,6 +22,8 @@ class SecurityDetailsPage extends StatelessWidget {
     ),
   ];
 
+ SecurityDetailsPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -95,7 +97,7 @@ class SecurityRow extends StatelessWidget {
   final SecurityInfo security;
   final bool isSmallScreen;
 
-  SecurityRow({required this.security, required this.isSmallScreen});
+  const SecurityRow({super.key, required this.security, required this.isSmallScreen});
 
   @override
   Widget build(BuildContext context) {

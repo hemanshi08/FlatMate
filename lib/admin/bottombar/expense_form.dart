@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class AddExpenseForm extends StatefulWidget {
+  const AddExpenseForm({super.key});
+
   @override
   _AddExpenseFormState createState() => _AddExpenseFormState();
 }
@@ -9,11 +11,11 @@ class _AddExpenseFormState extends State<AddExpenseForm> {
   final _formKey = GlobalKey<FormState>();
 
   // Text controllers for form fields
-  TextEditingController _titleController = TextEditingController();
-  TextEditingController _dateController = TextEditingController();
-  TextEditingController _amountController = TextEditingController();
-  TextEditingController _vendorController = TextEditingController();
-  TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _dateController = TextEditingController();
+  final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _vendorController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {

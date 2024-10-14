@@ -9,6 +9,8 @@ import 'package:flatmate/drawer/profile.dart';
 import 'package:flatmate/drawer/security_details.dart';
 
 class AdminComplain extends StatefulWidget {
+  const AdminComplain({super.key});
+
   @override
   _AdminComplainState createState() => _AdminComplainState();
 }
@@ -58,23 +60,28 @@ class _AdminComplainState extends State<AdminComplain> {
           'Complaints',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 24,
+            fontSize: 26,
             letterSpacing: 1,
           ),
         ),
         backgroundColor: const Color(0xFF06001A),
         toolbarHeight: screenHeight * 0.08,
         actions: [
-          Builder(
-            builder: (context) => IconButton(
-              icon: Icon(Icons.menu, color: Colors.white),
-              iconSize: screenWidth * 0.095,
-              onPressed: () {
-                Scaffold.of(context).openEndDrawer();
-              },
-            ),
+          IconButton(
+            icon: Icon(Icons.menu),
+            onPressed: () {
+              _scaffoldKey.currentState
+                  ?.openEndDrawer(); // Open right-side drawer
+            },
           ),
         ],
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          color: Colors.white,
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
         elevation: 0,
       ),
       endDrawer: _buildDrawer(screenWidth, screenHeight), // Right-side drawer
@@ -228,7 +235,7 @@ class _AdminComplainState extends State<AdminComplain> {
             case 0:
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => HomePage()),
+                MaterialPageRoute(builder: (context) => HomePageA()),
               );
               break;
             case 1:

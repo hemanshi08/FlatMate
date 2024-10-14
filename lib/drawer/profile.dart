@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class ProfilePage extends StatefulWidget {
+  const ProfilePage({super.key});
+
   @override
   _ProfilePageState createState() => _ProfilePageState();
 }
@@ -180,8 +182,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             SizedBox(height: 20),
             ProfileRow(label: 'Name', value: ownerName),
-            ProfileRow(
-                label: 'Wing_Flat', value: '$wingNumber' + '_' + '$flatNumber'),
+            ProfileRow(label: 'Wing_Flat', value: '$wingNumber,_,$flatNumber'),
             ProfileRow(label: 'Email', value: email),
             ProfileRow(label: 'Phone', value: phoneNumber),
             ProfileRow(
@@ -193,13 +194,13 @@ class _ProfilePageState extends State<ProfilePage> {
             Center(
               child: ElevatedButton(
                 onPressed: _editProfile,
-                child: Text('Edit Profile'),
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                   textStyle: TextStyle(fontSize: 16),
                   backgroundColor: Colors.indigo,
                   foregroundColor: Colors.white,
                 ),
+                child: Text('Edit Profile'),
               ),
             ),
           ],
@@ -214,6 +215,7 @@ class ProfileRow extends StatelessWidget {
   final String value;
 
   const ProfileRow({
+    super.key,
     required this.label,
     required this.value,
   });

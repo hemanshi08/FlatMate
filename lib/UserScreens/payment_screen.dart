@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class CreditCardPaymentScreen extends StatelessWidget {
+  const CreditCardPaymentScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     // Fetch screen width and height for responsiveness
@@ -149,6 +151,8 @@ class CreditCardPaymentScreen extends StatelessWidget {
 }
 
 class PaymentSuccessDialog extends StatelessWidget {
+  const PaymentSuccessDialog({super.key});
+
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
@@ -198,7 +202,9 @@ class PaymentSuccessDialog extends StatelessWidget {
 
 class OnlinePaymentScreen extends StatelessWidget {
   final String googlePayUrl =
-      "https://pay.google.com"; // URL to open Google Pay
+      "https://pay.google.com";
+
+  const OnlinePaymentScreen({super.key}); // URL to open Google Pay
 
   @override
   Widget build(BuildContext context) {
@@ -260,6 +266,8 @@ class OnlinePaymentScreen extends StatelessWidget {
 }
 
 class PaymentScreen extends StatefulWidget {
+  const PaymentScreen({super.key});
+
   @override
   _PaymentScreenState createState() => _PaymentScreenState();
 }

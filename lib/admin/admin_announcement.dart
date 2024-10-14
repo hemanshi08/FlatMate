@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class AnnouncementScreen extends StatefulWidget {
+  const AnnouncementScreen({super.key});
+
   @override
   _AnnouncementScreenState createState() => _AnnouncementScreenState();
 }
@@ -262,8 +264,8 @@ class AddAnnouncementScreen extends StatefulWidget {
   final Function(Map<String, String>) addAnnouncement;
   final Map<String, String>? initialAnnouncement;
 
-  AddAnnouncementScreen(
-      {required this.addAnnouncement, this.initialAnnouncement});
+  const AddAnnouncementScreen(
+      {super.key, required this.addAnnouncement, this.initialAnnouncement});
 
   @override
   _AddAnnouncementScreenState createState() => _AddAnnouncementScreenState();

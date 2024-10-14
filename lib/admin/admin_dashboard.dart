@@ -1,7 +1,8 @@
-import 'package:flatmate/UserScreens/maintanance_screen.dart';
+import 'package:flatmate/SameScreen/LoginScreen.dart';
 import 'package:flatmate/admin/bottombar/admin_complain.dart';
 import 'package:flatmate/admin/bottombar/admin_expense.dart';
 import 'package:flatmate/admin/bottombar/admin_maintense.dart';
+import 'package:flatmate/data/database_service.dart';
 import 'package:flatmate/drawer/contact_details.dart';
 import 'package:flatmate/drawer/language.dart';
 import 'package:flatmate/drawer/profile.dart';
@@ -13,13 +14,22 @@ import 'admin_rules.dart';
 import 'admin_visitor.dart';
 import 'maintense_history.dart';
 import 'resident_details.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flatmate/data/database_service.dart';
 
-class HomePage extends StatefulWidget {
+class HomePageA extends StatefulWidget {
+  final String? ownerName; // The owner name passed from login
+
+  HomePageA({super.key, this.ownerName}); // Constructor updated with ownerName
+
   @override
-  _HomePageState createState() => _HomePageState();
+  _HomePageAState createState() => _HomePageAState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageAState extends State<HomePageA> {
+  final DatabaseService _databaseService =
+      DatabaseService(); // Create an instance of DatabaseService
+
   int _selectedIndex = 0;
 
   @override
@@ -40,7 +50,7 @@ class _HomePageState extends State<HomePage> {
             fontSize:
                 screenWidth * 0.090, // Font size is 9% of the screen width
             fontWeight: FontWeight.bold,
-            letterSpacing: 1,
+            letterSpacing: 2,
           ),
         ),
         actions: [
@@ -54,6 +64,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ],
+        // automaticallyImplyLeading: false, // Disable the back arrow
       ),
       endDrawer:
           _buildDrawer(screenWidth, screenHeight), // Updated drawer design
@@ -76,7 +87,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             Text(
-              'Hemanshi Garnara',
+              widget.ownerName ?? '', // Dynamically display the ownerName
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize:
@@ -108,8 +119,12 @@ class _HomePageState extends State<HomePage> {
                   mainAxisSpacing: 34,
                   children: [
                     // Inside the _buildGridItem function for Rules & Regulation
-                    _buildGridItem(Icons.article, 'Rules & Regulation', context,
-                        AdminRulesScreen()),
+                    _buildGridItem(
+                      Icons.article,
+                      'Rules & Regulation',
+                      context,
+                      AdminRulesScreen(), // Provide a default value if ownerName is null
+                    ),
 
                     _buildGridItem(Icons.notifications_active, 'Announcement',
                         context, AnnouncementScreen()),
@@ -337,7 +352,8 @@ class _HomePageState extends State<HomePage> {
                 title: Text('Logout',
                     style: TextStyle(color: const Color(0xFF06001A))),
                 onTap: () {
-                  // Handle logout
+                  _databaseService.logout(
+                      context, LoginScreen()); // Call the logout method
                 },
               ),
             ],

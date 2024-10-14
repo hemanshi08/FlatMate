@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class ResidentsPage extends StatefulWidget {
+  const ResidentsPage({super.key});
+
   @override
   _ResidentsPageState createState() => _ResidentsPageState();
 }

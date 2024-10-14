@@ -23,7 +23,7 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF06001A), // Dark background color
       body: SingleChildScrollView(
-        child: Container(
+        child: SizedBox(
           height: screenHeight, // Full screen height
           width: screenWidth, // Full screen width
           child: Stack(
