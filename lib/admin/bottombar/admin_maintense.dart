@@ -29,6 +29,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
       key: _scaffoldKey,
 
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text(
           'Maintenance',
           style: TextStyle(
@@ -40,6 +41,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
         backgroundColor: const Color(0xFF06001A),
         toolbarHeight: 60.0,
         actions: [
+
           IconButton(
             icon: Icon(Icons.menu, color: Colors.white),
             iconSize: screenWidth * 0.095,
@@ -47,9 +49,12 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
               _scaffoldKey.currentState
                   ?.openEndDrawer(); // Open right-side drawer
             },
-          ),
+
+         
+
+           ),
         ],
-        automaticallyImplyLeading: false, // Disable the back arrow
+        // automaticallyImplyLeading: false, // Disable the back arrow
       ),
       endDrawer: _buildDrawer(screenWidth, screenHeight), // Right-side drawer
 

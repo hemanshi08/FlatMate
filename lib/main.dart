@@ -1,8 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flatmate/data/database_service.dart';
 import 'firebase_options.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-
 import 'package:firebase_database/firebase_database.dart';
 
 import 'package:flatmate/SameScreen/CreatePasswordScreen.dart';

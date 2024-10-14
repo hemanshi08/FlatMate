@@ -74,6 +74,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: const Color(0xFF06001A),
         title: Text(
           'Expense List',
@@ -85,15 +86,17 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
         ),
         toolbarHeight: 60.0,
         actions: [
-          IconButton(
-            icon: Icon(Icons.menu),
-            onPressed: () {
-              _scaffoldKey.currentState
-                  ?.openEndDrawer(); // Open right-side drawer
-            },
+          Builder(
+            builder: (context) => IconButton(
+              icon: Icon(Icons.menu, color: Colors.white),
+              iconSize: screenWidth * 0.095,
+              onPressed: () {
+                Scaffold.of(context).openEndDrawer();
+              },
+            ),
           ),
         ],
-        automaticallyImplyLeading: false, // Disable the back arrow
+        // automaticallyImplyLeading: false, // Disable the back arrow
       ),
       endDrawer: _buildDrawer(screenWidth), // Right-side drawer
       body: Column(

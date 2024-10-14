@@ -55,6 +55,7 @@ class _AdminComplainState extends State<AdminComplain> {
       key: _scaffoldKey,
 
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text(
           'Complaints',
           style: TextStyle(
@@ -67,15 +68,21 @@ class _AdminComplainState extends State<AdminComplain> {
         toolbarHeight: screenHeight * 0.08,
         actions: [
           IconButton(
-            icon: Icon(Icons.menu, color: Colors.white),
-            iconSize: screenWidth * 0.095,
+            icon: Icon(Icons.menu),
             onPressed: () {
               _scaffoldKey.currentState
                   ?.openEndDrawer(); // Open right-side drawer
             },
           ),
         ],
-        automaticallyImplyLeading: false, // Disable the back arrow
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          color: Colors.white,
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        elevation: 0,
       ),
       endDrawer: _buildDrawer(screenWidth, screenHeight), // Right-side drawer
 

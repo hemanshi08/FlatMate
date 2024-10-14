@@ -40,10 +40,11 @@ class _HomePageAState extends State<HomePageA> {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: const Color(0xFF06001A),
         elevation: 0,
         title: Text(
-          'FlatMate',
+          ' FlatMate',
           style: TextStyle(
             color: Colors.white,
             fontSize:
@@ -63,7 +64,7 @@ class _HomePageAState extends State<HomePageA> {
             ),
           ),
         ],
-        automaticallyImplyLeading: false, // Disable the back arrow
+        // automaticallyImplyLeading: false, // Disable the back arrow
       ),
       endDrawer:
           _buildDrawer(screenWidth, screenHeight), // Updated drawer design
