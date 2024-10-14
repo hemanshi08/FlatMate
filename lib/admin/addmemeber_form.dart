@@ -37,7 +37,7 @@ class _AddMemberFormState extends State<AddMemberForm> {
       widget.onMemberAdded(newMember);
 
       final flatNo = _flatNoController.text;
-      final username = 'wings_$flatNo';
+      final username = '$flatNo';
       final password = _generateRandomPassword();
 
       _sendEmailToMember(
@@ -150,8 +150,8 @@ class _AddMemberFormState extends State<AddMemberForm> {
                   if (value!.isEmpty) {
                     return 'Please enter flat number';
                   }
-                  if (!RegExp(r'^(A_)\d+$').hasMatch(value)) {
-                    return 'Flat number must start with "wings no_flat no" followed by digits';
+                  if (!RegExp(r'^[A-Z]_\d{3}$').hasMatch(value)) {
+                    return 'Flat number must start with a letter, followed by "_" and three digits';
                   }
                   return null;
                 },

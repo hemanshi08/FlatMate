@@ -1,5 +1,8 @@
+import 'dart:math';
+import 'package:flatmate/email_service.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
+import '../email_service.dart'; // Import the email service
 
 class AddAdminScreen extends StatefulWidget {
   final Function(Map<String, String>) onMemberAdded;
@@ -18,48 +21,88 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
   final TextEditingController _peopleController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _contactNoController = TextEditingController();
-  bool _hasPets = false;
+  bool _isSendingEmail = false; // Loading state
 
-  // Reference to the Firebase Realtime Database
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isSendingEmail = true; // Show loading
+      });
+
       final newAdmin = {
         'flatNo': _flatNoController.text,
         'ownerName': _ownerNameController.text,
         'people': _peopleController.text,
         'email': _emailController.text,
         'contactNo': _contactNoController.text,
-        'hasPets': _hasPets.toString(),
         'username': 'admin_${_flatNoController.text}', // Generate username
       };
 
-      // Check the current admin count
-      _database.child("admin").get().then((snapshot) {
-        int adminCount =
-            1; // Start count from 1 to generate admin_002 and so on.
+      final email = _emailController.text;
+      final flatNo = _flatNoController.text;
+      final username = 'admin_$flatNo';
+      final password = _generateRandomPassword();
 
-        // Update the admin count if entries exist
-        if (snapshot.exists && snapshot.value != null) {
-          adminCount = (snapshot.value as Map).length + 1;
-        }
+      try {
+        await _sendEmailToAdmin(
+          email: email,
+          username: username,
+          password: password,
+          ownerName: _ownerNameController.text,
+        );
 
-        // Generate the unique admin_id with padding, e.g., "admin_002"
-        final adminId = 'admin_${adminCount.toString().padLeft(3, '0')}';
+        // Add admin to Firebase only if email sends successfully
+        await _addAdminToDatabase(newAdmin, password); // Pass password here
 
-        // Save the new admin data with generated admin_id
-        _database.child("admin").child(adminId).set({
-          ...newAdmin,
-          'admin_id': adminId,
-        }).then((_) {
-          widget.onMemberAdded(newAdmin); // Notify parent widget
-          Navigator.pop(context); // Close form screen
-        }).catchError((error) {
-          print("Failed to add admin: $error");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Admin added and email sent successfully')),
+        );
+        widget.onMemberAdded(newAdmin); // Notify parent widget
+        Navigator.pop(context); // Close form screen
+      } catch (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $error')),
+        );
+      } finally {
+        setState(() {
+          _isSendingEmail = false; // Reset loading
         });
-      });
+      }
     }
+  }
+
+  Future<void> _sendEmailToAdmin({
+    required String email,
+    required String username,
+    required String password,
+    required String ownerName,
+  }) async {
+    final emailService = EmailService();
+    await emailService.sendEmail(
+      ownerName: ownerName,
+      username: username,
+      password: password,
+      email: email,
+    );
+  }
+
+  Future<void> _addAdminToDatabase(
+      Map<String, String> adminData, String password) async {
+    await _database.child("admin").push().set({
+      ...adminData,
+      'password': password, // Store the password in the database
+    });
+  }
+
+  String _generateRandomPassword() {
+    const characters =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#\$%^&*()';
+    return String.fromCharCodes(Iterable.generate(
+      8,
+      (_) => characters.codeUnitAt(Random().nextInt(characters.length)),
+    ));
   }
 
   @override
@@ -133,48 +176,24 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
                 TextFormField(
                   controller: _emailController,
                   decoration: InputDecoration(labelText: 'Email'),
-                  validator: (value) => value!.isEmpty ||
-                          !RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)
-                      ? 'Enter a valid email'
-                      : null,
+                  validator: (value) =>
+                      value!.isEmpty ? 'Please enter email' : null,
                 ),
                 SizedBox(height: screenHeight * 0.02),
                 TextFormField(
                   controller: _contactNoController,
                   decoration: InputDecoration(labelText: 'Contact No'),
-                  keyboardType: TextInputType.phone,
                   validator: (value) =>
-                      value!.isEmpty || !RegExp(r'^\d{10}$').hasMatch(value)
-                          ? 'Enter a valid 10-digit contact number'
-                          : null,
-                ),
-                Row(
-                  children: [
-                    Checkbox(
-                      value: _hasPets,
-                      onChanged: (value) => setState(() => _hasPets = value!),
-                    ),
-                    Text('Send Email'),
-                  ],
+                      value!.isEmpty ? 'Please enter contact number' : null,
                 ),
                 SizedBox(height: screenHeight * 0.02),
-                ElevatedButton(
-                  onPressed: _submitForm,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD8AFCC),
-                    padding:
-                        EdgeInsets.symmetric(vertical: screenHeight * 0.02),
-                    minimumSize: Size(double.infinity, 50),
-                  ),
-                  child: Text(
-                    'Submit',
-                    style: TextStyle(
-                      color: const Color(0xFF66123A),
-                      fontSize: screenWidth * 0.045,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1,
-                    ),
-                  ),
+                Center(
+                  child: _isSendingEmail
+                      ? CircularProgressIndicator() // Show loading indicator
+                      : ElevatedButton(
+                          onPressed: _submitForm,
+                          child: Text('Send Email'),
+                        ),
                 ),
               ],
             ),
