@@ -197,7 +197,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                               ElevatedButton(
                                 onPressed: () => _editAnnouncement(index),
                                 style: ElevatedButton.styleFrom(
-                                  primary: Color.fromARGB(255, 60, 206, 235),
+                                  backgroundColor: Color.fromARGB(255, 60, 206, 235),
                                   padding: EdgeInsets.symmetric(
                                     vertical: screenHeight *
                                         0.005, // Decreased vertical padding
@@ -220,7 +220,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                               ElevatedButton(
                                 onPressed: () => _deleteAnnouncement(index),
                                 style: ElevatedButton.styleFrom(
-                                  primary: Colors.red,
+                                  backgroundColor: Colors.red,
                                   padding: EdgeInsets.symmetric(
                                     vertical: screenHeight *
                                         0.005, // Decreased vertical padding
