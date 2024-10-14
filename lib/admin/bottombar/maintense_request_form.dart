@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class MaintenanceRequestForm extends StatefulWidget {
+  const MaintenanceRequestForm({super.key});
+
   @override
   _MaintenanceRequestFormState createState() => _MaintenanceRequestFormState();
 }

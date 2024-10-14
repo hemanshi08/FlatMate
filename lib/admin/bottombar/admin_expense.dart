@@ -11,6 +11,8 @@ import 'package:flutter/material.dart';
 import 'expense_form.dart';
 
 class AdminExpense extends StatefulWidget {
+  const AdminExpense({super.key});
+
   @override
   _AdminExpenseState createState() => _AdminExpenseState();
 }
@@ -70,18 +72,23 @@ class _AdminExpenseState extends State<AdminExpense> {
       appBar: AppBar(
         title: Text(
           'Expense List',
-          style: TextStyle(fontSize: screenWidth * 0.06),
+          style: TextStyle(
+              fontSize: screenWidth * 0.07,
+              color: Colors.white,
+              letterSpacing: 1),
         ),
         backgroundColor: const Color(0xFF06001A),
         actions: [
           IconButton(
-            icon: Icon(Icons.menu),
+            icon: Icon(Icons.menu, color: Colors.white),
+            iconSize: screenWidth * 0.095,
             onPressed: () {
               _scaffoldKey.currentState
                   ?.openEndDrawer(); // Open right-side drawer
             },
           ),
         ],
+        automaticallyImplyLeading: false, // Disable the back arrow
       ),
       endDrawer: _buildDrawer(screenWidth, screenHeight),
       body: Padding(
@@ -299,7 +306,7 @@ class _AdminExpenseState extends State<AdminExpense> {
             case 0:
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => HomePage()),
+                MaterialPageRoute(builder: (context) => HomePageA()),
               );
               break;
             case 1:

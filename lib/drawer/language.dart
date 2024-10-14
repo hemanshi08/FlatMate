@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class LanguageSelectionPage extends StatefulWidget {
+  const LanguageSelectionPage({super.key});
+
   @override
   _LanguageSelectionPageState createState() => _LanguageSelectionPageState();
 }

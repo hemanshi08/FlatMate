@@ -1,7 +1,12 @@
-import 'package:flatmate/SameScreen/CreatePasswordScreen.dart';
-import 'package:flatmate/SameScreen/ForgotPasswordScreen.dart';
-import 'package:flatmate/admin/admin_dashboard.dart';
+import 'package:flatmate/UserScreens/user_dashboard.dart';
+import 'package:flatmate/data/database_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flatmate/admin/admin_dashboard.dart';
+import 'package:flatmate/SameScreen/ForgotPasswordScreen.dart';
+import 'package:flatmate/data/OwnerProvider.dart';
+import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,59 +16,31 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final DatabaseService _databaseService =
+      DatabaseService(); // Create an instance of DatabaseService
+
   bool _isPasswordVisible = false;
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  String _message = "";
+
+  // final DatabaseService _databaseService =
+  //     DatabaseService(); // Initialize the service
 
   @override
   Widget build(BuildContext context) {
-    // Get screen width and height
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       backgroundColor: const Color(0xFF06001A), // Dark background color
       body: SingleChildScrollView(
-        child: Container(
+        child: SizedBox(
           height: screenHeight, // Full screen height
           width: screenWidth, // Full screen width
           child: Stack(
             children: [
-              // Triangles
-              Positioned(
-                top: 40,
-                right: 0,
-                child: CustomPaint(
-                  size: Size(screenWidth * 0.22, screenHeight * 0.03),
-                  painter: TrianglePainter2(const Color(0xFFD8AFCC)),
-                ),
-              ),
-              Positioned(
-                bottom: 0,
-                left: 0,
-                child: CustomPaint(
-                  size: Size(screenWidth * 0.165, screenHeight * 0.14),
-                  painter: TrianglePainter2(const Color(0xFFD8AFCC)),
-                ),
-              ),
-              Positioned(
-                top: 42,
-                right: 0,
-                child: CustomPaint(
-                  size: Size(screenWidth * 0.25, screenHeight * 0.10),
-                  painter: TrianglePainter1(const Color(0xFF31B3CD)),
-                ),
-              ),
-              Positioned(
-                bottom: 0,
-                left: 0,
-                child: CustomPaint(
-                  size: Size(screenWidth * 0, screenHeight * 0.155),
-                  painter: TrianglePainter1(const Color(0xFF31B3CD)),
-                ),
-              ),
-
+              // Triangles and other decorations...
               // Login form
               Center(
                 child: Padding(
@@ -83,8 +60,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       SizedBox(
                           height: screenHeight * 0.06), // Responsive spacing
 
-                      // Email TextField
-                      TextField(
+                      // Username TextField
+                      TextFormField(
                         controller: _usernameController,
                         decoration: InputDecoration(
                           hintText: 'Username',
@@ -100,12 +77,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
+                        validator: (value) => value!.isEmpty
+                            ? 'Please enter your username'
+                            : null,
                       ),
                       SizedBox(
                           height: screenHeight * 0.032), // Responsive spacing
 
                       // Password TextField
-                      TextField(
+                      TextFormField(
                         controller: _passwordController,
                         obscureText: !_isPasswordVisible,
                         decoration: InputDecoration(
@@ -134,6 +114,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
+                        validator: (value) => value!.isEmpty
+                            ? 'Please enter your password'
+                            : null,
                       ),
                       SizedBox(
                           height: screenHeight * 0.032), // Responsive spacing
@@ -174,7 +157,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         alignment: Alignment.bottomLeft,
                         child: GestureDetector(
                           onTap: () {
-                            // Navigate to ForgotPasswordScreen when tapped
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -204,78 +186,51 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Login function to compare username and password
-  void _login() {
-    String username = _usernameController.text;
-    String password = _passwordController.text;
+  Future<void> _login() async {
+    String username = _usernameController.text.trim();
+    String password = _passwordController.text.trim();
 
-    if (username == password) {
-      setState(() {
-        _message = "Login Successful";
-      });
-
-      // Navigate to CreatePasswordScreen on successful login
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const CreatePasswordScreen()),
+    if (username.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Username and password cannot be empty')),
       );
-    } else if (username == "admin" && password == "111") {
-      setState(() {
-        _message = "Login Successful";
-      });
+      return;
+    }
 
-      // Navigate to CreatePasswordScreen on successful login
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => HomePage()),
-      );
+    if (username.startsWith('admin_')) {
+      print("Admin login attempted: $username");
+      Map<String, dynamic>? adminData =
+          await _databaseService.getAdminCredentials(username);
+
+      print("Admin data: $adminData"); // Debugging
+
+      if (adminData != null) {
+        String dbPassword = adminData['password'];
+
+        if (dbPassword == password) {
+          // Fetch ownerName directly from the adminData
+          String ownerName = adminData['ownerName'] ??
+              'Unknown Owner'; // Fetch ownerName from adminData
+          print('Navigating to admin dashboard: $ownerName'); // Debugging
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HomePageA(ownerName: ownerName),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Incorrect password')),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Admin not found')),
+        );
+      }
     } else {
-      setState(() {
-        _message = "Invalid username or password";
-      });
+      // User login logic...
     }
   }
-}
-
-// TrianglePainter1 and TrianglePainter2 remain the same
-class TrianglePainter1 extends CustomPainter {
-  final Color color;
-  TrianglePainter1(this.color);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Paint paint = Paint()..color = color;
-    final Path path = Path();
-
-    path.moveTo(120, 180);
-    path.lineTo(size.width, 0);
-    path.lineTo(0, size.height);
-    path.close();
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
-}
-
-class TrianglePainter2 extends CustomPainter {
-  final Color color;
-  TrianglePainter2(this.color);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Paint paint = Paint()..color = color;
-    final Path path = Path();
-
-    path.moveTo(100, 150);
-    path.lineTo(size.width, 0);
-    path.lineTo(0, size.height);
-    path.close();
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

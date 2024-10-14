@@ -25,6 +25,8 @@ class ExpenseItem {
 }
 
 class ExpenseListScreen extends StatefulWidget {
+  const ExpenseListScreen({super.key});
+
   @override
   _ExpenseListScreenState createState() => _ExpenseListScreenState();
 }
@@ -33,7 +35,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedIndex = 0;
 
-  List<ExpenseItem> _expenses = [
+  final List<ExpenseItem> _expenses = [
     ExpenseItem(
       title: 'Cleaning',
       description: 'Monthly Cleaning Service',
@@ -91,6 +93,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
             },
           ),
         ],
+        automaticallyImplyLeading: false, // Disable the back arrow
       ),
       endDrawer: _buildDrawer(screenWidth), // Right-side drawer
       body: Column(

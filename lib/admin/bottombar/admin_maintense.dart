@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'maintense_request_form.dart'; // Ensure this import is present
 
 class MaintenanceScreen extends StatefulWidget {
-  const MaintenanceScreen({Key? key}) : super(key: key);
+  const MaintenanceScreen({super.key});
 
   @override
   State<MaintenanceScreen> createState() => _MaintenanceScreenState();
@@ -41,13 +41,15 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
         toolbarHeight: 60.0,
         actions: [
           IconButton(
-            icon: Icon(Icons.menu),
+            icon: Icon(Icons.menu, color: Colors.white),
+            iconSize: screenWidth * 0.095,
             onPressed: () {
               _scaffoldKey.currentState
                   ?.openEndDrawer(); // Open right-side drawer
             },
           ),
         ],
+        automaticallyImplyLeading: false, // Disable the back arrow
       ),
       endDrawer: _buildDrawer(screenWidth, screenHeight), // Right-side drawer
 
@@ -155,7 +157,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
             case 0:
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => HomePage()),
+                MaterialPageRoute(builder: (context) => HomePageA()),
               );
               break;
             case 1:

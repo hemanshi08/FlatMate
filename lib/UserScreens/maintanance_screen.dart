@@ -9,6 +9,8 @@ import 'package:flatmate/drawer/profile.dart';
 import 'package:flatmate/drawer/security_details.dart';
 
 class MaintenancePage extends StatefulWidget {
+  const MaintenancePage({super.key});
+
   @override
   _MaintenancePageState createState() => _MaintenancePageState();
 }

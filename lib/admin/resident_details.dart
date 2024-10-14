@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'addmemeber_form.dart'; // Import the AddMemberForm file
 
 class ResidentsPage extends StatefulWidget {
+  const ResidentsPage({super.key});
+
   @override
   _ResidentsPageState createState() => _ResidentsPageState();
 }
