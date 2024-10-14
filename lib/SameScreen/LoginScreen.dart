@@ -1,5 +1,6 @@
 import 'package:flatmate/UserScreens/user_dashboard.dart';
 import 'package:flatmate/data/database_service.dart';
+import 'package:flatmate/data/session_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flatmate/admin/admin_dashboard.dart';
 import 'package:flatmate/SameScreen/ForgotPasswordScreen.dart';
@@ -212,6 +213,9 @@ class _LoginScreenState extends State<LoginScreen> {
           String ownerName = adminData['ownerName'] ??
               'Unknown Owner'; // Fetch ownerName from adminData
           print('Navigating to admin dashboard: $ownerName'); // Debugging
+
+          // Save session using SessionManager
+          await SessionManager.saveAdminSession(username);
 
           Navigator.push(
             context,
