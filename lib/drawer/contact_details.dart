@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 
 class ContactDetailsPage extends StatelessWidget {
-  final DatabaseReference contactRef =
-      FirebaseDatabase.instance.ref('contacts');
+  final DatabaseReference adminRef = FirebaseDatabase.instance.ref('admin');
 
   ContactDetailsPage({super.key});
 
@@ -38,27 +37,30 @@ class ContactDetailsPage extends StatelessWidget {
             SizedBox(height: 25.0),
             Expanded(
               child: FutureBuilder<DataSnapshot>(
-                future: contactRef.get(),
+                future: adminRef.get(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Center(child: CircularProgressIndicator());
                   } else if (snapshot.hasError) {
+                    print('Error fetching data: ${snapshot.error}');
                     return Center(child: Text('Error: ${snapshot.error}'));
                   } else if (!snapshot.hasData ||
                       snapshot.data!.value == null) {
+                    print('No contact data available');
                     return Center(child: Text('No contact data available'));
                   }
 
                   final Map<dynamic, dynamic> contactData =
                       snapshot.data!.value as Map<dynamic, dynamic>;
+                  print('Contact data fetched: $contactData');
                   List<ContactInfo> contactList = [];
 
                   contactData.forEach((key, value) {
                     if (value is Map<dynamic, dynamic>) {
                       contactList.add(ContactInfo(
-                        name: value['name'] ?? 'N/A',
-                        apartmentNumber: value['apartmentNumber'] ?? 'N/A',
-                        phoneNumber: value['phoneNumber'] ?? 'N/A',
+                        name: value['ownerName'] ?? 'N/A',
+                        apartmentNumber: value['flatNo~'] ?? 'N/A',
+                        phoneNumber: value['contactNo'] ?? 'N/A',
                         email: value['email'] ?? 'N/A',
                       ));
                     }
