@@ -4,8 +4,6 @@ import 'package:flatmate/data/session_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flatmate/admin/admin_dashboard.dart';
 import 'package:flatmate/SameScreen/ForgotPasswordScreen.dart';
-import 'package:flatmate/data/OwnerProvider.dart';
-import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -234,6 +232,9 @@ class _LoginScreenState extends State<LoginScreen> {
           // Save the admin ID to Shared Preferences
           SharedPreferences prefs = await SharedPreferences.getInstance();
           await prefs.setString('admin_id', adminID); // Saving the admin ID
+
+          print(
+              "Admin ID saved: $adminID"); // Make sure this outputs the correct ID after login
 
           // Navigate to HomePageA without passing ownerName
           Navigator.pushReplacement(

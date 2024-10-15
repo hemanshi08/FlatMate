@@ -1,5 +1,6 @@
 import 'package:flatmate/data/database_service.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AdminRulesScreen extends StatefulWidget {
   const AdminRulesScreen({super.key});
@@ -14,11 +15,40 @@ class _AdminRulesScreenState extends State<AdminRulesScreen> {
   final TextEditingController _descriptionController = TextEditingController();
 
   List<Map<String, dynamic>> rules = [];
+  String? currentAdminOwnerName; // To hold the current admin's owner name
 
   @override
   void initState() {
     super.initState();
     _fetchRules();
+    _getAdminownerNameFromPreferences(); // Fetch the admin ownerName from SharedPreferences
+  }
+
+  Future<void> testRetrieveAdminId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? adminId = prefs.getString('admin_id');
+    print("Test retrieved Admin ID: $adminId");
+  }
+
+  // Helper function to get the admin ownerName from SharedPreferences
+  Future<void> _getAdminownerNameFromPreferences() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? adminId = prefs.getString('admin_id'); // Fetching admin ID
+
+    print(
+        "Retrieved Admin ID: $adminId"); // This should not be null if saved properly
+
+    if (adminId != null) {
+      String? ownerName =
+          await _databaseService.getOwnerNameFromAdminId(adminId);
+      if (ownerName != null) {
+        setState(() {
+          currentAdminOwnerName = ownerName; // Update the owner name state
+        });
+      }
+    } else {
+      print("Admin ID is null. Please log in again."); // Handle null case
+    }
   }
 
   // Helper function for responsive font size
@@ -28,7 +58,7 @@ class _AdminRulesScreenState extends State<AdminRulesScreen> {
     return calculatedSize < minSize ? minSize : calculatedSize;
   }
 
-  // Fetch rules from Firebase without admin names
+  // Fetch rules from Firebase including the "addedBy" field (admin name)
   Future<void> _fetchRules() async {
     List<Map<String, dynamic>> fetchedRules =
         await _databaseService.fetchRules();
@@ -37,31 +67,67 @@ class _AdminRulesScreenState extends State<AdminRulesScreen> {
     });
   }
 
-  // Add rule through the DatabaseService
+  // Add rule through the DatabaseService with owner name
   Future<void> _addRule() async {
     if (_ruleController.text.isNotEmpty &&
         _descriptionController.text.isNotEmpty) {
-      await _databaseService.addRule(
-        _ruleController.text,
-        _descriptionController.text,
-      );
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? adminId = prefs.getString('admin_id'); // Corrected key to match
 
-      _ruleController.clear();
-      _descriptionController.clear();
-      Navigator.of(context).pop();
-      _fetchRules(); // Refresh the list after adding a rule
+      if (adminId != null) {
+        // Fetch the owner's name based on the admin ID
+        String? ownerName = await _databaseService
+            .getOwnerNameFromAdminId(adminId); // Pass the adminId
+
+        if (ownerName != null) {
+          try {
+            // Add the rule with the owner name
+            await _databaseService.addRule(
+              _ruleController.text,
+              _descriptionController.text,
+              ownerName, // Pass the owner's name
+            );
+
+            // Clear the input fields
+            _ruleController.clear();
+            _descriptionController.clear();
+            // Refresh the list after adding a rule
+            await _fetchRules();
+            // Close the dialog only after successful addition
+            Navigator.of(context).pop();
+          } catch (error) {
+            // Handle any errors that occur during adding the rule
+            print("Error adding rule: $error");
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Failed to add rule: $error")),
+            );
+          }
+        } else {
+          print("Owner name is null.");
+        }
+      } else {
+        print(
+            "Admin ID is null."); // This should now print null if the key is mismatched
+      }
+    } else {
+      print("Rule title or description is empty.");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Please enter a rule title and description.")),
+      );
     }
   }
 
-  // Edit rule using DatabaseService
+  // Edit rule using DatabaseService with owner name
   Future<void> _editRule(int index) async {
     String ruleId = rules[index]['rule_id']!;
     if (_ruleController.text.isNotEmpty &&
-        _descriptionController.text.isNotEmpty) {
+        _descriptionController.text.isNotEmpty &&
+        currentAdminOwnerName != null) {
       await _databaseService.editRule(
         ruleId,
         _ruleController.text,
         _descriptionController.text,
+        currentAdminOwnerName!, // Pass the current admin's owner name
       );
 
       _ruleController.clear();
@@ -231,7 +297,15 @@ class _AdminRulesScreenState extends State<AdminRulesScreen> {
                               ),
                               SizedBox(
                                   height: screenHeight *
-                                      0.005), // 0.5% of screen height
+                                      0.006), // 0.6% of screen height
+                              Text(
+                                "Added by: ${rules[index]['addedBy']}",
+                                style: TextStyle(
+                                  fontSize: getResponsiveFontSize(screenWidth,
+                                      0.035), // Responsive font size
+                                  color: const Color.fromARGB(255, 71, 70, 70),
+                                ),
+                              ),
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
@@ -241,17 +315,15 @@ class _AdminRulesScreenState extends State<AdminRulesScreen> {
                                         isEdit: true, index: index),
                                     icon: Icon(
                                       Icons.edit,
-                                      color: Colors.blue,
-                                      size: screenWidth *
-                                          0.05, // Responsive icon size
+                                      color: const Color(0xFF994562),
+                                      size: screenWidth * 0.045,
                                     ),
                                     label: Text(
                                       'Edit',
                                       style: TextStyle(
-                                        color: Colors.blue,
                                         fontSize: getResponsiveFontSize(
-                                            screenWidth,
-                                            0.039), // Responsive font size
+                                            screenWidth, 0.038),
+                                        color: const Color(0xFF994562),
                                       ),
                                     ),
                                   ),
@@ -259,22 +331,20 @@ class _AdminRulesScreenState extends State<AdminRulesScreen> {
                                     onPressed: () => _deleteRule(index),
                                     icon: Icon(
                                       Icons.delete,
-                                      color: Colors.red,
-                                      size: screenWidth *
-                                          0.05, // Responsive icon size
+                                      color: const Color(0xFF994562),
+                                      size: screenWidth * 0.045,
                                     ),
                                     label: Text(
-                                      'Remove',
+                                      'Delete',
                                       style: TextStyle(
-                                        color: Colors.red,
                                         fontSize: getResponsiveFontSize(
-                                            screenWidth,
-                                            0.039), // Responsive font size
+                                            screenWidth, 0.038),
+                                        color: const Color(0xFF994562),
                                       ),
                                     ),
                                   ),
                                 ],
-                              ),
+                              )
                             ],
                           ),
                         ),
