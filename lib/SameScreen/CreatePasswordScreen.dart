@@ -2,7 +2,10 @@ import 'package:flatmate/UserScreens/user_dashboard.dart';
 import 'package:flutter/material.dart';
 
 class CreatePasswordScreen extends StatefulWidget {
-  const CreatePasswordScreen({super.key});
+  final String email; // Add this line
+
+  const CreatePasswordScreen(
+      {super.key, required this.email}); // Update constructor
 
   @override
   State<CreatePasswordScreen> createState() => _CreatePasswordScreenState();
@@ -159,7 +162,6 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                           style: ElevatedButton.styleFrom(
                             padding: EdgeInsets.symmetric(
                               vertical: screenHeight * 0.010, // Dynamic padding
-                              //horizontal: screenWidth * 0.05,
                             ),
                             backgroundColor:
                                 const Color(0xFF31B3CD), // Cyan button
@@ -194,18 +196,42 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
     String newPassword = _newPasswordController.text;
     String confirmPassword = _confirmPasswordController.text;
 
+    if (newPassword.isEmpty || confirmPassword.isEmpty) {
+      // Check if any field is empty
+      _showErrorDialog('Please fill in all fields.');
+      return;
+    }
+
     if (newPassword == confirmPassword) {
       // If passwords match, navigate to the UserDashboardScreen
-      Navigator.push(
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => HomePage()),
       );
     } else {
-      // Display error or handle accordingly
-      setState(() {
-        // You can show a message if needed
-      });
+      // Display error message
+      _showErrorDialog('The new password and confirmation do not match.');
     }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Error'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 

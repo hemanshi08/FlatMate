@@ -59,7 +59,7 @@ class ContactDetailsPage extends StatelessWidget {
                     if (value is Map<dynamic, dynamic>) {
                       contactList.add(ContactInfo(
                         name: value['ownerName'] ?? 'N/A',
-                        apartmentNumber: value['flatNo~'] ?? 'N/A',
+                        apartmentNumber: value['flatNo'] ?? 'N/A',
                         phoneNumber: value['contactNo'] ?? 'N/A',
                         email: value['email'] ?? 'N/A',
                       ));

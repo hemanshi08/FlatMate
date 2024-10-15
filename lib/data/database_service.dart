@@ -1,6 +1,7 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'dart:math';
 
 class DatabaseService {
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
@@ -43,7 +44,6 @@ class DatabaseService {
       if (event.snapshot.exists) {
         final data = event.snapshot.value;
         if (data is Map<dynamic, dynamic> && data.isNotEmpty) {
-          // Assuming each user has a unique username and this returns their data
           return Map<String, dynamic>.from(data.values.first);
         }
       }
@@ -156,5 +156,52 @@ class DatabaseService {
     }
   }
 
-  // Function to add a new resident with flat_no field
+  // Generate a 4-digit OTP
+  String generateOtp() {
+    var random = Random();
+    return (random.nextInt(9000) + 1000).toString(); // Returns a 4-digit OTP
+  }
+
+  // Send OTP via Email (Replace with actual email API implementation)
+  Future<String> sendOtpToEmail(String email) async {
+    String otp = generateOtp();
+    try {
+      // Email sending logic here (Firebase Functions, SendGrid, etc.)
+      print("OTP sent to $email: $otp"); // For debugging
+    } catch (e) {
+      print("Failed to send OTP: $e");
+    }
+    return otp;
+  }
+
+  // Fetch email based on username
+  // Future<String?> fetchEmail(String username) async {
+  //   try {
+  //     DatabaseEvent userEvent =
+  //         await _database.orderByChild("username").equalTo(username).once();
+
+  //     if (userEvent.snapshot.exists) {
+  //       final userData = userEvent.snapshot.value;
+  //       if (userData is Map<dynamic, dynamic> && userData.isNotEmpty) {
+  //         return Map<String, dynamic>.from(userData.values.first)['email'];
+  //       }
+  //     }
+
+  //     DatabaseEvent adminEvent =
+  //         await _adminRef.orderByChild("username").equalTo(username).once();
+
+  //     if (adminEvent.snapshot.exists) {
+  //       final adminData = adminEvent.snapshot.value;
+  //       if (adminData is Map<dynamic, dynamic> && adminData.isNotEmpty) {
+  //         return Map<String, dynamic>.from(adminData.values.first)['email'];
+  //       }
+  //     }
+
+  //     print("No user/admin found for username: $username");
+  //     return null;
+  //   } catch (e) {
+  //     print("Error fetching email: $e");
+  //     return null;
+  //   }
+  // }
 }
