@@ -107,7 +107,7 @@ class DatabaseService {
     return null; // Return null if no owner name is found
   }
 
-   // Add a new rule with the owner's name as "addedBy"
+  // Add a new rule with the owner's name as "addedBy"
   Future<void> addRule(String title, String description, String addedBy) async {
     try {
       await FirebaseDatabase.instance.ref().child('rules').push().set({
@@ -309,4 +309,29 @@ class DatabaseService {
   //     return null;
   //   }
   // }
+
+  //-------------------------------------------------user-------------------------------------------------------//
+
+  // Method to fetch the owner's name using the user ID for user dashboard
+  Future<String?> getOwnerNameByUserId(String userId) async {
+    try {
+      // Assuming you have a reference to the residents table
+      DatabaseEvent event =
+          await _residentsRef.orderByChild("user_id").equalTo(userId).once();
+
+      if (event.snapshot.exists) {
+        final data = event.snapshot.value;
+        if (data is Map<dynamic, dynamic> && data.isNotEmpty) {
+          return Map<String, dynamic>.from(
+              data.values.first)['ownerName']; // Return the owner's name
+        }
+      } else {
+        print("No owner found for userId: $userId");
+        return null;
+      }
+    } catch (e) {
+      print("Error fetching owner name: $e");
+      return null;
+    }
+  }
 }

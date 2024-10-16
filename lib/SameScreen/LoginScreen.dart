@@ -241,8 +241,15 @@ class _LoginScreenState extends State<LoginScreen> {
         String dbPassword = userData['password'];
 
         if (dbPassword == password) {
-          await SessionManager.saveUserSession(username);
+          // Fetch admin ID from the admin data
+          String userID = userData['user_id']; // Accessing user_id directly
 
+          // Save the user ID to Shared Preferences
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.setString('user_id', userID); // Saving the admin ID
+
+          print(
+              "User ID saved: $userID"); // Make sure this outputs the correct ID after login
           // Redirect to user dashboard
           Navigator.push(
             context,

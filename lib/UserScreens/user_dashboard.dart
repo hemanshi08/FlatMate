@@ -5,12 +5,14 @@ import 'package:flatmate/UserScreens/maintanance_screen.dart';
 import 'package:flatmate/UserScreens/residentdetails.dart';
 import 'package:flatmate/UserScreens/rules.dart';
 import 'package:flatmate/UserScreens/visitor_log.dart';
+import 'package:flatmate/data/database_service.dart';
 import 'package:flatmate/drawer/contact_details.dart';
 import 'package:flatmate/drawer/language.dart';
 import 'package:flatmate/drawer/profile.dart';
 import 'package:flatmate/drawer/security_details.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,7 +22,33 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final DatabaseService _databaseService =
+      DatabaseService(); // Create an instance of DatabaseService
+
   int _selectedIndex = 0;
+
+  String? ownerName; // To store the fetched owner name
+  String? userId; // To store the user ID
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOwnerDetails(); // Load the owner details when the widget initializes
+  }
+
+  Future<void> _loadOwnerDetails() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    userId = prefs.getString('user_id');
+
+    if (userId != null) {
+      String? fetchedOwnerName =
+          await _databaseService.getOwnerNameByUserId(userId!);
+
+      setState(() {
+        ownerName = fetchedOwnerName ?? 'Owner';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +98,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             Text(
-              'Hemanshi Garnara',
+              ownerName ?? '', // Dynamically display the owner name
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: screenWidth * 0.08,
