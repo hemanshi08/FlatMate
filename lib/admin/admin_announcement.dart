@@ -1,4 +1,7 @@
+import 'package:firebase_database/firebase_database.dart';
+import 'package:flatmate/data/database_service.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AnnouncementScreen extends StatefulWidget {
   const AnnouncementScreen({super.key});
@@ -8,37 +11,53 @@ class AnnouncementScreen extends StatefulWidget {
 }
 
 class _AnnouncementScreenState extends State<AnnouncementScreen> {
-  List<Map<String, String>> announcements = [
-    {
-      "title": "Community Events",
-      "date": "07/26/2024", // Changed date format
-      "details":
-          "Join us for a BBQ in the courtyard! \nTime: 4:00 PM - 6:00 PM\nDetails: Free food, games, and a chance to meet your neighbors."
-    },
-    {
-      "title": "Holiday Party",
-      "date": "08/26/2024", // Changed date format
-      "details":
-          "Time: 6:00 PM - 9:00 PM\nDetails: Celebrate with us in the lobby.\nSnacks and drinks provided."
-    },
-  ];
+  List<Map<String, String>> announcements = [];
 
-  // Method to handle adding a new announcement
-  void _addAnnouncement(Map<String, String> newAnnouncement) {
-    setState(() {
-      announcements.add(newAnnouncement);
-    });
+  @override
+  void initState() {
+    super.initState();
+    _fetchAnnouncements();
   }
 
-  void _editAnnouncement(int index) {
+  // Method to fetch announcements from the database
+  Future<void> _fetchAnnouncements() async {
+    try {
+      List<Map<String, String>> fetchedAnnouncements =
+          await DatabaseService().fetchAnnouncements();
+      setState(() {
+        announcements = fetchedAnnouncements;
+      });
+    } catch (e) {
+      print("Error fetching announcements: $e");
+    }
+  }
+
+  // Method to handle adding a new announcement
+  Future<void> _addAnnouncement(Map<String, String> newAnnouncement) async {
+    try {
+      await DatabaseService().addAnnouncement(newAnnouncement);
+      _fetchAnnouncements(); // Refresh the list
+    } catch (e) {
+      print("Error adding announcement: $e");
+    }
+  }
+
+  // Method to handle editing an announcement
+  Future<void> _editAnnouncement(int index) async {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => AddAnnouncementScreen(
-          addAnnouncement: (updatedAnnouncement) {
-            setState(() {
-              announcements[index] = updatedAnnouncement;
-            });
+          addAnnouncement: (updatedAnnouncement) async {
+            try {
+              await DatabaseService().editAnnouncement(
+                announcements[index]["announcement_id"]!,
+                updatedAnnouncement,
+              );
+              _fetchAnnouncements(); // Refresh the list after edit
+            } catch (e) {
+              print("Error editing announcement: $e");
+            }
             Navigator.pop(context);
           },
           initialAnnouncement: announcements[index],
@@ -47,10 +66,15 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
     );
   }
 
-  void _deleteAnnouncement(int index) {
-    setState(() {
-      announcements.removeAt(index);
-    });
+  // Method to delete an announcement
+  Future<void> _deleteAnnouncement(int index) async {
+    try {
+      await DatabaseService()
+          .deleteAnnouncement(announcements[index]["announcement_id"]!);
+      _fetchAnnouncements(); // Refresh the list after delete
+    } catch (e) {
+      print("Error deleting announcement: $e");
+    }
   }
 
   @override
@@ -65,7 +89,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Announcement',
+          'Announcements',
           style: TextStyle(
             color: Colors.white,
             fontSize: 24,
@@ -199,7 +223,8 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                               ElevatedButton(
                                 onPressed: () => _editAnnouncement(index),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Color.fromARGB(255, 60, 206, 235),
+                                  backgroundColor:
+                                      Color.fromARGB(255, 60, 206, 235),
                                   padding: EdgeInsets.symmetric(
                                     vertical: screenHeight *
                                         0.005, // Decreased vertical padding
@@ -261,11 +286,11 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
 
 // New screen to add or edit announcement
 class AddAnnouncementScreen extends StatefulWidget {
-  final Function(Map<String, String>) addAnnouncement;
+  final Future<void> Function(Map<String, String>)? addAnnouncement;
   final Map<String, String>? initialAnnouncement;
 
   const AddAnnouncementScreen(
-      {super.key, required this.addAnnouncement, this.initialAnnouncement});
+      {super.key, this.initialAnnouncement, this.addAnnouncement});
 
   @override
   _AddAnnouncementScreenState createState() => _AddAnnouncementScreenState();
@@ -277,6 +302,7 @@ class _AddAnnouncementScreenState extends State<AddAnnouncementScreen> {
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _detailsController = TextEditingController();
   DateTime? _selectedDate;
+  String? _adminId;
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -289,7 +315,7 @@ class _AddAnnouncementScreenState extends State<AddAnnouncementScreen> {
       setState(() {
         _selectedDate = picked;
         _dateController.text =
-            "${picked.month.toString().padLeft(2, '0')}/${picked.day.toString().padLeft(2, '0')}/${picked.year}"; // Format as MM/DD/YYYY
+            "${picked.month.toString().padLeft(2, '0')}/${picked.day.toString().padLeft(2, '0')}/${picked.year}";
       });
     }
   }
@@ -297,10 +323,45 @@ class _AddAnnouncementScreenState extends State<AddAnnouncementScreen> {
   @override
   void initState() {
     super.initState();
+    _loadAdminId();
     if (widget.initialAnnouncement != null) {
       _titleController.text = widget.initialAnnouncement!["title"]!;
       _dateController.text = widget.initialAnnouncement!["date"]!;
       _detailsController.text = widget.initialAnnouncement!["details"]!;
+    }
+  }
+
+  Future<void> _loadAdminId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _adminId = prefs.getString('admin_id');
+    });
+  }
+
+  Future<void> _submitAnnouncement() async {
+    if (_formKey.currentState!.validate() && _adminId != null) {
+      Map<String, String> newAnnouncement = {
+        "admin_id": _adminId!,
+        "title": _titleController.text,
+        "details": _detailsController.text,
+        "date": _dateController.text,
+      };
+
+      // Use the passed callback if available
+      if (widget.addAnnouncement != null) {
+        await widget.addAnnouncement!(newAnnouncement);
+      } else {
+        // Handle submission here (Firebase logic)
+        DatabaseReference _announcementsRef =
+            FirebaseDatabase.instance.ref("announcements");
+        String newAnnouncementId = _announcementsRef.push().key ?? "";
+        newAnnouncement["announcement_id"] = newAnnouncementId;
+        await _announcementsRef.child(newAnnouncementId).set(newAnnouncement);
+      }
+
+      Navigator.pop(context); // Navigate back after submission
+    } else {
+      print("Admin ID is null or form validation failed");
     }
   }
 
@@ -315,32 +376,23 @@ class _AddAnnouncementScreenState extends State<AddAnnouncementScreen> {
   @override
   Widget build(BuildContext context) {
     var screenWidth = MediaQuery.of(context).size.width;
-    var screenHeight = MediaQuery.of(context).size.height;
-
-    double paddingValue = screenWidth * 0.04;
+    var paddingValue = screenWidth * 0.04;
 
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: 180, // Custom toolbar height
+        toolbarHeight: 180,
         backgroundColor: const Color(0xFF06001A),
-        automaticallyImplyLeading:
-            false, // Disable default back button behavior
+        automaticallyImplyLeading: false,
         flexibleSpace: Padding(
-          padding: const EdgeInsets.only(left: 16, top: 50), // Adjust padding
+          padding: const EdgeInsets.only(left: 16, top: 50),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Back Arrow Icon
               IconButton(
-                icon: Icon(
-                  Icons.arrow_back,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
+                icon: Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
               ),
-              SizedBox(height: 10), // Add some space between the icon and title
+              SizedBox(height: 10),
               Center(
                 child: Text(
                   "Announcements",
@@ -352,7 +404,6 @@ class _AddAnnouncementScreenState extends State<AddAnnouncementScreen> {
                   ),
                 ),
               ),
-              Spacer(), // Adjust spacing
             ],
           ),
         ),
@@ -413,16 +464,7 @@ class _AddAnnouncementScreenState extends State<AddAnnouncementScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        widget.addAnnouncement({
-                          "title": _titleController.text,
-                          "date": _dateController.text,
-                          "details": _detailsController.text,
-                        });
-                        Navigator.pop(context);
-                      }
-                    },
+                    onPressed: _submitAnnouncement,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFD8AFCC),
                       padding: EdgeInsets.symmetric(vertical: 16.0),

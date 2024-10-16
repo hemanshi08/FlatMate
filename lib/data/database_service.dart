@@ -2,14 +2,21 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DatabaseService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
-  final DatabaseReference _rulesRef =
-      FirebaseDatabase.instance.ref().child('rules');
+
   final DatabaseReference _adminRef =
       FirebaseDatabase.instance.ref().child('admin');
+
+  final DatabaseReference _rulesRef =
+      FirebaseDatabase.instance.ref().child('rules');
+
+  final DatabaseReference _announcementsRef =
+      FirebaseDatabase.instance.ref().child('announcements');
 
   // Function to validate admin credentials
   Future<Map<String, dynamic>?> getAdminCredentials(String username) async {
@@ -161,6 +168,62 @@ class DatabaseService {
     } catch (e) {
       print("Error deleting rule: $e");
     }
+  }
+
+// Fetch announcements for a specific admin as a stream
+
+  Future<List<Map<String, String>>> fetchAnnouncements() async {
+    List<Map<String, String>> announcements = [];
+
+    try {
+      // Get the data snapshot from the announcements node
+      final DatabaseEvent event = await _announcementsRef.once();
+      final DataSnapshot snapshot =
+          event.snapshot; // Get the snapshot from the event
+
+      // Check if the snapshot has data
+      if (snapshot.exists) {
+        // Iterate through each child and add to the list
+        for (var child in snapshot.children) {
+          announcements.add({
+            "announcement_id": child.key!,
+            ...Map<String, String>.from(child.value as Map<dynamic, dynamic>),
+          });
+        }
+      }
+    } catch (e) {
+      print("Error fetching announcements: $e");
+    }
+
+    return announcements;
+  }
+
+  // Add a new announcement to the database
+  Future<void> addAnnouncement(Map<String, String> announcement) async {
+    try {
+      // If the announcement does not have an ID, generate one
+      if (announcement["announcement_id"] == null) {
+        announcement["announcement_id"] = _announcementsRef.push().key!;
+      }
+
+      // Save the announcement to the database using the announcement ID
+      await _announcementsRef
+          .child(announcement["announcement_id"]!)
+          .set(announcement);
+    } catch (e) {
+      print("Error adding announcement: $e");
+    }
+  }
+
+  // Edit an existing announcement
+  Future<void> editAnnouncement(
+      String key, Map<String, String> updatedAnnouncement) async {
+    await _announcementsRef.child(key).update(updatedAnnouncement);
+  }
+
+  // Delete an announcement
+  Future<void> deleteAnnouncement(String key) async {
+    await _announcementsRef.child(key).remove();
   }
 
   // Existing method for logging out
