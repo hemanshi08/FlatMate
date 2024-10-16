@@ -1,12 +1,13 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../email_service.dart'; // Import the updated email service
+import 'package:firebase_database/firebase_database.dart';
 
 class AddMemberForm extends StatefulWidget {
   final Function(Map<String, String>) onMemberAdded;
 
   const AddMemberForm({super.key, required this.onMemberAdded});
-            
+
   @override
   _AddMemberFormState createState() => _AddMemberFormState();
 }
@@ -19,8 +20,9 @@ class _AddMemberFormState extends State<AddMemberForm> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _contactNoController = TextEditingController();
   bool _isSendingEmail = false; // Loading state
+  final DatabaseReference _database = FirebaseDatabase.instance.ref();
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isSendingEmail = true; // Set loading state
@@ -33,36 +35,41 @@ class _AddMemberFormState extends State<AddMemberForm> {
         'email': _emailController.text,
         'contactNo': _contactNoController.text,
       };
-      widget.onMemberAdded(newMember);
 
+      final email = _emailController.text;
       final flatNo = _flatNoController.text;
-      final username = 'wings_$flatNo';
+      final username = flatNo; // Using flat number as username
       final password = _generateRandomPassword();
 
-      _sendEmailToMember(
-        email: _emailController.text,
-        flatNo: flatNo,
-        ownerName: _ownerNameController.text,
-        people: _peopleController.text,
-        contactNo: _contactNoController.text,
-        username: username,
-        password: password,
-      ).then((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Email sent successfully')),
+      try {
+        // Send email to the resident
+        await _sendEmailToMember(
+          email: email,
+          flatNo: flatNo,
+          ownerName: _ownerNameController.text,
+          people: _peopleController.text,
+          contactNo: _contactNoController.text,
+          username: username,
+          password: password,
         );
-      }).catchError((error) {
+
+        // Add member to Firebase only if email sends successfully
+        await _addMemberToDatabase(newMember, password);
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send email: $error')),
+          SnackBar(content: Text('Member added and email sent successfully')),
         );
-      }).whenComplete(() {
+        widget.onMemberAdded(newMember); // Notify parent widget
+        Navigator.pop(context); // Close form screen
+      } catch (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $error')),
+        );
+      } finally {
         setState(() {
           _isSendingEmail = false; // Reset loading state
         });
-        Navigator.pop(context);
-      });
-    } else {
-      setState(() {});
+      }
     }
   }
 
@@ -84,13 +91,33 @@ class _AddMemberFormState extends State<AddMemberForm> {
     );
   }
 
+  Future<void> _addMemberToDatabase(
+      Map<String, String> memberData, String password) async {
+    final String userId = _generateUserId(); // Generate a unique user ID
+    final String username =
+        memberData['flatNo']!; // Using flat number as username
+
+    // Push member data to the database, including user_id and username
+    await _database.child("residents").push().set({
+      ...memberData,
+      'password': password, // Store the password in the database
+      'user_id': userId, // Store user_id in the database
+      'username': username, // Store username in the database
+    });
+  }
+
+  // Function to generate a unique user ID
+  String _generateUserId() {
+    // You can customize the user ID generation logic as needed
+    return 'user_${DateTime.now().millisecondsSinceEpoch}';
+  }
+
   String _generateRandomPassword() {
     const characters =
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#\$%^&*()'; // Include symbols for better security
-    Random random = Random();
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#\$%^&*()';
     return String.fromCharCodes(Iterable.generate(
-      8, // Length of the generated password
-      (_) => characters.codeUnitAt(random.nextInt(characters.length)),
+      8,
+      (_) => characters.codeUnitAt(Random().nextInt(characters.length)),
     ));
   }
 
@@ -117,7 +144,7 @@ class _AddMemberFormState extends State<AddMemberForm> {
               SizedBox(height: screenHeight * 0.02),
               Center(
                 child: Text(
-                  "Add Residents",
+                  "Add Resident",
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -132,7 +159,6 @@ class _AddMemberFormState extends State<AddMemberForm> {
         ),
       ),
       body: SingleChildScrollView(
-        // Make the body scrollable
         padding: EdgeInsets.all(screenWidth * 0.08),
         child: Form(
           key: _formKey,
@@ -142,15 +168,15 @@ class _AddMemberFormState extends State<AddMemberForm> {
               TextFormField(
                 controller: _flatNoController,
                 decoration: InputDecoration(
-                  labelText: 'Flat No (e.g.,A_101)',
+                  labelText: 'Flat No (e.g., A_101)',
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
                   if (value!.isEmpty) {
                     return 'Please enter flat number';
                   }
-                  if (!RegExp(r'^(A_)\d+$').hasMatch(value)) {
-                    return 'Flat number must start with "wings no_flat no" followed by digits';
+                  if (!RegExp(r'^[A-Z]_\d{3}$').hasMatch(value)) {
+                    return 'Flat number must start with a letter, followed by "_" and three digits';
                   }
                   return null;
                 },
@@ -179,58 +205,33 @@ class _AddMemberFormState extends State<AddMemberForm> {
               TextFormField(
                 controller: _emailController,
                 decoration: InputDecoration(
-                  labelText: 'Email (must be Gmail)',
+                  labelText: 'Email',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) {
-                  if (value!.isEmpty ||
-                      !RegExp(r'^[a-zA-Z0-9._%+-]+@gmail\.com$')
-                          .hasMatch(value)) {
-                    return 'Enter a valid Gmail address';
-                  }
-                  return null;
-                },
+                validator: (value) =>
+                    value!.isEmpty ? 'Please enter email' : null,
               ),
               SizedBox(height: 16),
               TextFormField(
                 controller: _contactNoController,
                 decoration: InputDecoration(
-                  labelText: 'Contact No (10 digits)',
+                  labelText: 'Contact No',
                   border: OutlineInputBorder(),
                 ),
-                keyboardType: TextInputType.phone,
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Please enter contact number';
-                  }
-                  if (!RegExp(r'^\d{10}$').hasMatch(value)) {
-                    return 'Contact number must be exactly 10 digits';
-                  }
-                  return null;
-                },
+                validator: (value) =>
+                    value!.isEmpty ? 'Please enter contact number' : null,
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 24),
               Center(
-                child: _isSendingEmail
-                    ? CircularProgressIndicator() // Show loading indicator
-                    : ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFD8AFCC),
-                          padding: EdgeInsets.symmetric(
-                              vertical: screenHeight * 0.01),
-                          minimumSize: Size(double.infinity, 50),
-                        ),
-                        onPressed: _submitForm,
-                        child: Text(
-                          'Send Email',
-                          style: TextStyle(
-                            color: const Color(0xFF66123A),
-                            fontSize: screenWidth * 0.045,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                      ),
+                child: ElevatedButton(
+                  onPressed: _isSendingEmail ? null : _submitForm,
+                  child: _isSendingEmail
+                      ? CircularProgressIndicator(
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        )
+                      : Text('Add Member'),
+                ),
               ),
             ],
           ),

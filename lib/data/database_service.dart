@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:math';
 
 class DatabaseService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -11,6 +12,8 @@ class DatabaseService {
 
   final DatabaseReference _adminRef =
       FirebaseDatabase.instance.ref().child('admin');
+  final DatabaseReference _residentsRef =
+      FirebaseDatabase.instance.ref().child('residents');
 
   final DatabaseReference _rulesRef =
       FirebaseDatabase.instance.ref().child('rules');
@@ -45,7 +48,7 @@ class DatabaseService {
   Future<Map<String, dynamic>?> getUserCredentials(String username) async {
     try {
       DatabaseEvent event = await _database
-          .child("users")
+          .child("residents") // Ensure this matches your Firebase structure
           .orderByChild("username")
           .equalTo(username)
           .once();
@@ -104,7 +107,7 @@ class DatabaseService {
     return null; // Return null if no owner name is found
   }
 
-  // Add a new rule with the owner's name as "addedBy"
+   // Add a new rule with the owner's name as "addedBy"
   Future<void> addRule(String title, String description, String addedBy) async {
     try {
       await FirebaseDatabase.instance.ref().child('rules').push().set({
@@ -257,4 +260,53 @@ class DatabaseService {
       MaterialPageRoute(builder: (context) => loginScreen),
     );
   }
+
+  // Generate a 4-digit OTP
+  String generateOtp() {
+    var random = Random();
+    return (random.nextInt(9000) + 1000).toString(); // Returns a 4-digit OTP
+  }
+
+  // Send OTP via Email (Replace with actual email API implementation)
+  Future<String> sendOtpToEmail(String email) async {
+    String otp = generateOtp();
+    try {
+      // Email sending logic here (Firebase Functions, SendGrid, etc.)
+      print("OTP sent to $email: $otp"); // For debugging
+    } catch (e) {
+      print("Failed to send OTP: $e");
+    }
+    return otp;
+  }
+
+  // Fetch email based on username
+  // Future<String?> fetchEmail(String username) async {
+  //   try {
+  //     DatabaseEvent userEvent =
+  //         await _database.orderByChild("username").equalTo(username).once();
+
+  //     if (userEvent.snapshot.exists) {
+  //       final userData = userEvent.snapshot.value;
+  //       if (userData is Map<dynamic, dynamic> && userData.isNotEmpty) {
+  //         return Map<String, dynamic>.from(userData.values.first)['email'];
+  //       }
+  //     }
+
+  //     DatabaseEvent adminEvent =
+  //         await _adminRef.orderByChild("username").equalTo(username).once();
+
+  //     if (adminEvent.snapshot.exists) {
+  //       final adminData = adminEvent.snapshot.value;
+  //       if (adminData is Map<dynamic, dynamic> && adminData.isNotEmpty) {
+  //         return Map<String, dynamic>.from(adminData.values.first)['email'];
+  //       }
+  //     }
+
+  //     print("No user/admin found for username: $username");
+  //     return null;
+  //   } catch (e) {
+  //     print("Error fetching email: $e");
+  //     return null;
+  //   }
+  // }
 }

@@ -1,6 +1,7 @@
+import 'dart:math';
+import 'package:flatmate/email_service.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'dart:math';
 
 class AddAdminScreen extends StatefulWidget {
   final Function(Map<String, String>) onMemberAdded;
@@ -18,93 +19,146 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
   final TextEditingController _peopleController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _contactNoController = TextEditingController();
-  bool _hasPets = false;
-
-  // Reference to the Firebase Realtime Database
+  bool _isSendingEmail = false;
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
+  String newAdminId = '';
 
-  // Function to generate a default password for the admin
-  String _generateDefaultPassword(String ownerName) {
-    Random random = Random();
-    int randomNumber = random.nextInt(999); // Generate a random number (0-999)
-    String password = '${ownerName.toLowerCase()}_$randomNumber';
-    return password;
+  @override
+  void initState() {
+    super.initState();
+    _generateAdminId();
   }
 
-  // Function to submit the form
-  void _submitForm() async {
-    print("Validating form...");
+  Future<void> _generateAdminId() async {
+    final adminsSnapshot = await _database.child("admin").once();
+    final adminsMap = adminsSnapshot.snapshot.value as Map<dynamic, dynamic>?;
 
+    if (adminsMap != null) {
+      int highestId = 1;
+
+      adminsMap.forEach((key, value) {
+        String adminId = key;
+        if (adminId.startsWith('admin_')) {
+          int idNumber = int.parse(adminId.split('_')[1]);
+          if (idNumber > highestId) {
+            highestId = idNumber;
+          }
+        }
+      });
+
+      newAdminId = 'admin_${(highestId + 1).toString().padLeft(3, '0')}';
+    } else {
+      newAdminId = 'admin_001';
+    }
+  }
+
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      print("Form is valid, proceeding with submission...");
+      setState(() {
+        _isSendingEmail = true;
+      });
+
+      final email = _emailController.text;
+      final flatNo = _flatNoController.text;
+
+      final emailExists = await _checkIfEmailExists(email);
+      if (emailExists) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text('Email must be unique. This email already exists.')),
+        );
+        setState(() {
+          _isSendingEmail = false;
+        });
+        return;
+      }
+
+      final username = 'admin_$flatNo';
+
+      final newAdmin = {
+        'flatNo': flatNo,
+        'ownerName': _ownerNameController.text,
+        'people': _peopleController.text,
+        'email': email,
+        'contactNo': _contactNoController.text,
+        'username': username,
+      };
+
+      final password = _generateRandomPassword();
 
       try {
-        // Check if the flat number or owner name is already in use
-        DatabaseEvent existingAdminByFlatNo = await _database
-            .child("admin")
-            .orderByChild("flatNo")
-            .equalTo(_flatNoController.text)
-            .once();
-
-        DatabaseEvent existingAdminByOwnerName = await _database
-            .child("admin")
-            .orderByChild("ownerName")
-            .equalTo(_ownerNameController.text)
-            .once();
-
-        if (existingAdminByFlatNo.snapshot.exists ||
-            existingAdminByOwnerName.snapshot.exists) {
-          print('Flat number or Owner name already exists');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text('Flat number or Owner name is already in use')),
-          );
-          return;
-        }
-
-        // Generate a username based on the flat number and owner name
-        final username = 'admin_${_flatNoController.text}';
-
-        // Generate a default password based on the owner name
-        final defaultPassword =
-            _generateDefaultPassword(_ownerNameController.text);
-
-        final newAdmin = {
-          'flatNo': _flatNoController.text,
-          'ownerName': _ownerNameController.text,
-          'people': _peopleController.text,
-          'email': _emailController.text,
-          'contactNo': _contactNoController.text,
-          'hasPets': _hasPets.toString(),
-          'username': username, // Generate username based on flatNo
-          'password': defaultPassword, // Generate default password
-        };
-
-        // Generate a new unique key for the admin
-        String adminId = _database.child("admin").push().key!;
-
-        // Save the new admin data to Firebase with admin_id
-        await _database.child("admin").child(adminId).set({
-          ...newAdmin,
-          'admin_id': adminId, // Use unique admin_id
-        });
-
-        // Log success
-        print("Admin added to Firebase successfully.");
-
-        // Notify the parent widget about the new admin addition
-        widget.onMemberAdded(newAdmin);
-        Navigator.pop(context); // Close the form screen
-      } catch (error) {
-        print("Failed to add admin: $error");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to add admin: $error')),
+        await _sendEmailToAdmin(
+          email: email,
+          username: username,
+          password: password,
+          ownerName: _ownerNameController.text,
         );
+
+        await _addAdminToDatabase(newAdmin, password);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Admin added and email sent successfully')),
+        );
+        widget.onMemberAdded(newAdmin);
+        Navigator.pop(context);
+      } catch (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $error')),
+        );
+      } finally {
+        setState(() {
+          _isSendingEmail = false;
+        });
       }
-    } else {
-      // Log invalid form
-      print("Form validation failed.");
     }
+  }
+
+  Future<bool> _checkIfEmailExists(String email) async {
+    final adminsSnapshot = await _database.child("admin").once();
+    final adminsMap = adminsSnapshot.snapshot.value as Map<dynamic, dynamic>?;
+
+    if (adminsMap != null) {
+      for (var value in adminsMap.values) {
+        if (value['email'] == email) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  Future<void> _sendEmailToAdmin({
+    required String email,
+    required String username,
+    required String password,
+    required String ownerName,
+  }) async {
+    final emailService = EmailService();
+    await emailService.sendEmail(
+      ownerName: ownerName,
+      username: username,
+      password: password,
+      email: email,
+    );
+  }
+
+  Future<void> _addAdminToDatabase(
+      Map<String, String> adminData, String password) async {
+    await _database.child("admin").child(newAdminId).set({
+      ...adminData,
+      'admin_id': newAdminId,
+      'password': password,
+    });
+  }
+
+  String _generateRandomPassword() {
+    const characters =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#\$%^&*()';
+    return String.fromCharCodes(Iterable.generate(
+      8,
+      (_) => characters.codeUnitAt(Random().nextInt(characters.length)),
+    ));
   }
 
   @override
@@ -180,48 +234,24 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
                 TextFormField(
                   controller: _emailController,
                   decoration: InputDecoration(labelText: 'Email'),
-                  validator: (value) => value!.isEmpty ||
-                          !RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)
-                      ? 'Enter a valid email'
-                      : null,
+                  validator: (value) =>
+                      value!.isEmpty ? 'Please enter email' : null,
                 ),
                 SizedBox(height: screenHeight * 0.02),
                 TextFormField(
                   controller: _contactNoController,
                   decoration: InputDecoration(labelText: 'Contact No'),
-                  keyboardType: TextInputType.phone,
                   validator: (value) =>
-                      value!.isEmpty || !RegExp(r'^\d{10}$').hasMatch(value)
-                          ? 'Enter a valid 10-digit contact number'
-                          : null,
-                ),
-                Row(
-                  children: [
-                    Checkbox(
-                      value: _hasPets,
-                      onChanged: (value) => setState(() => _hasPets = value!),
-                    ),
-                    Text('Has Pets'),
-                  ],
+                      value!.isEmpty ? 'Please enter contact number' : null,
                 ),
                 SizedBox(height: screenHeight * 0.02),
-                ElevatedButton(
-                  onPressed: _submitForm,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD8AFCC),
-                    padding:
-                        EdgeInsets.symmetric(vertical: screenHeight * 0.02),
-                    minimumSize: Size(double.infinity, 50),
-                  ),
-                  child: Text(
-                    'Submit',
-                    style: TextStyle(
-                      color: const Color(0xFF66123A),
-                      fontSize: screenWidth * 0.045,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1,
-                    ),
-                  ),
+                Center(
+                  child: _isSendingEmail
+                      ? CircularProgressIndicator()
+                      : ElevatedButton(
+                          onPressed: _submitForm,
+                          child: Text('Send Email'),
+                        ),
                 ),
               ],
             ),

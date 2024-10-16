@@ -1,26 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class ContactDetailsPage extends StatelessWidget {
-  final List<ContactInfo> contactList = [
-    ContactInfo(
-      name: 'John Doe',
-      apartmentNumber: 'A101',
-      phoneNumber: '+1 (123) 456-7890',
-      email: 'johndoe@example.com',
-    ),
-    ContactInfo(
-      name: 'Jane Smith',
-      apartmentNumber: 'B202',
-      phoneNumber: '+1 (987) 654-3210',
-      email: 'janesmith@example.com',
-    ),
-    ContactInfo(
-      name: 'Michael Johnson',
-      apartmentNumber: 'C303',
-      phoneNumber: '+1 (555) 123-4567',
-      email: 'michael.j@example.com',
-    ),
-  ];
+  final DatabaseReference adminRef = FirebaseDatabase.instance.ref('admin');
 
   ContactDetailsPage({super.key});
 
@@ -28,14 +10,6 @@ class ContactDetailsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // title: Text(
-        //   'Contact Details',
-        //   style: TextStyle(
-        //     color: Colors.white,
-        //     fontSize: 26,
-        //     letterSpacing: 1,
-        //   ),
-        // ),
         backgroundColor: const Color(0xFF06001A),
         toolbarHeight: 60.0,
         leading: IconButton(
@@ -51,7 +25,6 @@ class ContactDetailsPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Title centered
             Center(
               child: Text(
                 'Contact Details',
@@ -61,12 +34,44 @@ class ContactDetailsPage extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(height: 25.0), // Space below the title
+            SizedBox(height: 25.0),
             Expanded(
-              child: ListView.builder(
-                itemCount: contactList.length,
-                itemBuilder: (context, index) {
-                  return ContactRow(contact: contactList[index]);
+              child: FutureBuilder<DataSnapshot>(
+                future: adminRef.get(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    print('Error fetching data: ${snapshot.error}');
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  } else if (!snapshot.hasData ||
+                      snapshot.data!.value == null) {
+                    print('No contact data available');
+                    return Center(child: Text('No contact data available'));
+                  }
+
+                  final Map<dynamic, dynamic> contactData =
+                      snapshot.data!.value as Map<dynamic, dynamic>;
+                  print('Contact data fetched: $contactData');
+                  List<ContactInfo> contactList = [];
+
+                  contactData.forEach((key, value) {
+                    if (value is Map<dynamic, dynamic>) {
+                      contactList.add(ContactInfo(
+                        name: value['ownerName'] ?? 'N/A',
+                        apartmentNumber: value['flatNo'] ?? 'N/A',
+                        phoneNumber: value['contactNo'] ?? 'N/A',
+                        email: value['email'] ?? 'N/A',
+                      ));
+                    }
+                  });
+
+                  return ListView.builder(
+                    itemCount: contactList.length,
+                    itemBuilder: (context, index) {
+                      return ContactRow(contact: contactList[index]);
+                    },
+                  );
                 },
               ),
             ),
@@ -99,12 +104,10 @@ class ContactRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(
-          vertical: 10.0, horizontal: 10), // Space between rows
+      padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Contact Name and Apartment Number in Row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -128,11 +131,9 @@ class ContactRow extends StatelessWidget {
             ],
           ),
           SizedBox(height: 6.0),
-          // Phone number
           Row(
             children: [
-              Icon(Icons.phone,
-                  color: Colors.blue, size: 18.0), // Smaller icon size
+              Icon(Icons.phone, color: Colors.blue, size: 18.0),
               SizedBox(width: 8.0),
               Text(
                 contact.phoneNumber,
@@ -144,11 +145,9 @@ class ContactRow extends StatelessWidget {
             ],
           ),
           SizedBox(height: 8.0),
-          // Email
           Row(
             children: [
-              Icon(Icons.email,
-                  color: Colors.blue, size: 18.0), // Smaller icon size
+              Icon(Icons.email, color: Colors.blue, size: 18.0),
               SizedBox(width: 8.0),
               Expanded(
                 child: Text(
@@ -164,14 +163,10 @@ class ContactRow extends StatelessWidget {
           SizedBox(height: 16.0),
           Divider(
             thickness: 1.0,
-            color: Colors.grey[300], // Divider to separate contacts
+            color: Colors.grey[300],
           ),
         ],
       ),
     );
   }
 }
-
-// void main() => runApp(MaterialApp(
-//       home: ContactDetailsPage(),
-//     ));

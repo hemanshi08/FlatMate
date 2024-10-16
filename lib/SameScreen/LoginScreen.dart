@@ -17,33 +17,11 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final DatabaseService _databaseService =
-      DatabaseService(); // Create an instance of DatabaseService
+  final DatabaseService _databaseService = DatabaseService();
 
   bool _isPasswordVisible = false;
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _checkSavedAdminSession(); // Add the session check here
-  }
-
-  Future<void> _checkSavedAdminSession() async {
-    String? savedAdminId = await SessionManager.getAdminId();
-    if (savedAdminId != null && await SessionManager.isAdminSessionValid(30)) {
-      // Assuming 30 minutes validity
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => HomePageA(), // No need to pass ownerName
-        ),
-      );
-    }
-  }
-  // final DatabaseService _databaseService =
-  //     DatabaseService(); // Initialize the service
 
   @override
   Widget build(BuildContext context) {
@@ -51,15 +29,13 @@ class _LoginScreenState extends State<LoginScreen> {
     double screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF06001A), // Dark background color
+      backgroundColor: const Color(0xFF06001A),
       body: SingleChildScrollView(
         child: SizedBox(
-          height: screenHeight, // Full screen height
-          width: screenWidth, // Full screen width
+          height: screenHeight,
+          width: screenWidth,
           child: Stack(
             children: [
-              // Triangles and other decorations...
-              // Login form
               Center(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 31),
@@ -70,13 +46,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       Text(
                         'LOGIN',
                         style: TextStyle(
-                          fontSize: screenHeight * 0.05, // Responsive font size
+                          fontSize: screenHeight * 0.05,
                           color: const Color(0xFFD8AFCC),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      SizedBox(
-                          height: screenHeight * 0.06), // Responsive spacing
+                      SizedBox(height: screenHeight * 0.06),
 
                       // Username TextField
                       TextFormField(
@@ -84,8 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         decoration: InputDecoration(
                           hintText: 'Username',
                           hintStyle: TextStyle(
-                            fontSize:
-                                screenHeight * 0.022, // Responsive font size
+                            fontSize: screenHeight * 0.022,
                           ),
                           filled: true,
                           fillColor: Colors.white,
@@ -99,8 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ? 'Please enter your username'
                             : null,
                       ),
-                      SizedBox(
-                          height: screenHeight * 0.032), // Responsive spacing
+                      SizedBox(height: screenHeight * 0.032),
 
                       // Password TextField
                       TextFormField(
@@ -109,8 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         decoration: InputDecoration(
                           hintText: 'Password',
                           hintStyle: TextStyle(
-                            fontSize:
-                                screenHeight * 0.022, // Responsive font size
+                            fontSize: screenHeight * 0.022,
                           ),
                           filled: true,
                           fillColor: Colors.white,
@@ -136,8 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ? 'Please enter your password'
                             : null,
                       ),
-                      SizedBox(
-                          height: screenHeight * 0.032), // Responsive spacing
+                      SizedBox(height: screenHeight * 0.032),
 
                       // Login Button
                       SizedBox(
@@ -148,8 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                           style: ElevatedButton.styleFrom(
                             padding: EdgeInsets.symmetric(
-                              vertical:
-                                  screenHeight * 0.010, // Responsive padding
+                              vertical: screenHeight * 0.010,
                             ),
                             backgroundColor: const Color(0xFF31B3CD),
                             shape: RoundedRectangleBorder(
@@ -159,16 +129,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: Text(
                             'LOGIN',
                             style: TextStyle(
-                              fontSize:
-                                  screenHeight * 0.0245, // Responsive font size
+                              fontSize: screenHeight * 0.0245,
                               color: const Color(0xFF06001A),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
                       ),
-                      SizedBox(
-                          height: screenHeight * 0.023), // Responsive spacing
+                      SizedBox(height: screenHeight * 0.023),
 
                       // Forgot password text
                       Align(
@@ -185,14 +153,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             'Forgot password?',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize:
-                                  screenHeight * 0.0235, // Responsive font size
+                              fontSize: screenHeight * 0.0235,
                             ),
                           ),
                         ),
                       ),
-                      SizedBox(
-                          height: screenHeight * 0.032), // Responsive spacing
+                      SizedBox(height: screenHeight * 0.032),
                     ],
                   ),
                 ),
@@ -220,7 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
       Map<String, dynamic>? adminData =
           await _databaseService.getAdminCredentials(username);
 
-      print("Admin data: $adminData"); // Debugging
+      print("Admin data: $adminData");
 
       if (adminData != null) {
         String dbPassword = adminData['password'];
@@ -254,7 +220,46 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } else {
-      // User login logic...
+      // User login logic
+      print("User login attempted: $username");
+
+      // Check the format of the username (e.g., wings_flatno)
+      if (!RegExp(r'^[A-Z]_\d{3}$').hasMatch(username)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid username format.')),
+        );
+        return;
+      }
+
+      // Retrieve user credentials from residents table
+      Map<String, dynamic>? userData =
+          await _databaseService.getUserCredentials(username);
+
+      print("User data: $userData");
+
+      if (userData != null) {
+        String dbPassword = userData['password'];
+
+        if (dbPassword == password) {
+          await SessionManager.saveUserSession(username);
+
+          // Redirect to user dashboard
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HomePage(),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Incorrect password')),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User not found')),
+        );
+      }
     }
   }
 }
