@@ -1,138 +1,89 @@
 import 'dart:math';
-import 'package:flatmate/email_service.dart';
 import 'package:flutter/material.dart';
+import '../email_service.dart'; // Import the updated email service
 import 'package:firebase_database/firebase_database.dart';
 
-class AddAdminScreen extends StatefulWidget {
+class AddMemberForm extends StatefulWidget {
   final Function(Map<String, String>) onMemberAdded;
 
-  const AddAdminScreen({super.key, required this.onMemberAdded});
+  const AddMemberForm({super.key, required this.onMemberAdded});
 
   @override
-  _AddAdminScreenState createState() => _AddAdminScreenState();
+  _AddMemberFormState createState() => _AddMemberFormState();
 }
 
-class _AddAdminScreenState extends State<AddAdminScreen> {
+class _AddMemberFormState extends State<AddMemberForm> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _flatNoController = TextEditingController();
   final TextEditingController _ownerNameController = TextEditingController();
   final TextEditingController _peopleController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _contactNoController = TextEditingController();
-  bool _isSendingEmail = false;
+  bool _isSendingEmail = false; // Loading state
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
-  String newAdminId = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _generateAdminId();
-  }
-
-  Future<void> _generateAdminId() async {
-    final adminsSnapshot = await _database.child("admin").once();
-    final adminsMap = adminsSnapshot.snapshot.value as Map<dynamic, dynamic>?;
-
-    if (adminsMap != null) {
-      int highestId = 1;
-
-      adminsMap.forEach((key, value) {
-        String adminId = key;
-        if (adminId.startsWith('admin_')) {
-          int idNumber = int.parse(adminId.split('_')[1]);
-          if (idNumber > highestId) {
-            highestId = idNumber;
-          }
-        }
-      });
-
-      newAdminId = 'admin_${(highestId + 1).toString().padLeft(3, '0')}';
-    } else {
-      newAdminId = 'admin_001';
-    }
-  }
 
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
-        _isSendingEmail = true;
+        _isSendingEmail = true; // Set loading state
       });
+
+      final newMember = {
+        'flatNo': _flatNoController.text,
+        'ownerName': _ownerNameController.text,
+        'people': _peopleController.text,
+        'email': _emailController.text,
+        'contactNo': _contactNoController.text,
+      };
 
       final email = _emailController.text;
       final flatNo = _flatNoController.text;
-
-      final emailExists = await _checkIfEmailExists(email);
-      if (emailExists) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text('Email must be unique. This email already exists.')),
-        );
-        setState(() {
-          _isSendingEmail = false;
-        });
-        return;
-      }
-
-      final username = 'admin_$flatNo';
-
-      final newAdmin = {
-        'flatNo': flatNo,
-        'ownerName': _ownerNameController.text,
-        'people': _peopleController.text,
-        'email': email,
-        'contactNo': _contactNoController.text,
-        'username': username,
-      };
-
+      final username = flatNo; // Using flat number as username
       final password = _generateRandomPassword();
 
       try {
-        await _sendEmailToAdmin(
+        // Generate a sequential user ID
+        final userId = await _generateUserId();
+
+        // Send email to the resident
+        await _sendEmailToMember(
           email: email,
+          flatNo: flatNo,
+          ownerName: _ownerNameController.text,
+          people: _peopleController.text,
+          contactNo: _contactNoController.text,
           username: username,
           password: password,
-          ownerName: _ownerNameController.text,
         );
 
-        await _addAdminToDatabase(newAdmin, password);
+        // Add member to Firebase only if email sends successfully
+        await _addMemberToDatabase(newMember, password, userId);
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Admin added and email sent successfully')),
+          SnackBar(content: Text('Member added and email sent successfully')),
         );
-        widget.onMemberAdded(newAdmin);
-        Navigator.pop(context);
+        widget.onMemberAdded(newMember); // Notify parent widget
+        Navigator.pop(context); // Close form screen
       } catch (error) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $error')),
         );
       } finally {
         setState(() {
-          _isSendingEmail = false;
+          _isSendingEmail = false; // Reset loading state
         });
       }
     }
   }
 
-  Future<bool> _checkIfEmailExists(String email) async {
-    final adminsSnapshot = await _database.child("admin").once();
-    final adminsMap = adminsSnapshot.snapshot.value as Map<dynamic, dynamic>?;
-
-    if (adminsMap != null) {
-      for (var value in adminsMap.values) {
-        if (value['email'] == email) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  Future<void> _sendEmailToAdmin({
+  Future<void> _sendEmailToMember({
     required String email,
+    required String flatNo,
+    required String ownerName,
+    required String people,
+    required String contactNo,
     required String username,
     required String password,
-    required String ownerName,
   }) async {
     final emailService = EmailService();
     await emailService.sendEmail(
@@ -143,13 +94,40 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
     );
   }
 
-  Future<void> _addAdminToDatabase(
-      Map<String, String> adminData, String password) async {
-    await _database.child("admin").child(newAdminId).set({
-      ...adminData,
-      'admin_id': newAdminId,
-      'password': password,
+  Future<void> _addMemberToDatabase(
+      Map<String, String> memberData, String password, String userId) async {
+    final String username =
+        memberData['flatNo']!; // Using flat number as username
+
+    // Push member data to the database, including user_id and username
+    await _database.child("residents").child(userId).set({
+      ...memberData,
+      'password': password, // Store the password in the database
+      'user_id': userId, // Store user_id in the database
+      'username': username, // Store username in the database
     });
+  }
+
+  // Function to generate a unique, sequential user ID
+  Future<String> _generateUserId() async {
+    final residentsSnapshot = await _database.child("residents").once();
+    final residentsMap =
+        residentsSnapshot.snapshot.value as Map<dynamic, dynamic>?;
+
+    int highestId = 1;
+
+    if (residentsMap != null) {
+      residentsMap.forEach((key, value) {
+        String userId = key;
+        if (userId.startsWith('user_')) {
+          int idNumber = int.parse(userId.split('_')[1]);
+          if (idNumber > highestId) {
+            highestId = idNumber;
+          }
+        }
+      });
+    }
+    return 'user_${(highestId + 1).toString().padLeft(3, '0')}';
   }
 
   String _generateRandomPassword() {
@@ -168,7 +146,7 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: screenHeight * 0.25,
+        toolbarHeight: screenHeight * 0.24,
         backgroundColor: const Color(0xFF06001A),
         automaticallyImplyLeading: false,
         flexibleSpace: Padding(
@@ -184,7 +162,7 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
               SizedBox(height: screenHeight * 0.02),
               Center(
                 child: Text(
-                  "Add Admin",
+                  "Add Resident",
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -199,62 +177,81 @@ class _AddAdminScreenState extends State<AddAdminScreen> {
         ),
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(screenWidth * 0.08),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(height: screenHeight * 0.02),
-                TextFormField(
-                  controller: _flatNoController,
-                  decoration: InputDecoration(labelText: 'Flat No'),
-                  validator: (value) =>
-                      value!.isEmpty ? 'Please enter flat number' : null,
+        padding: EdgeInsets.all(screenWidth * 0.08),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextFormField(
+                controller: _flatNoController,
+                decoration: InputDecoration(
+                  labelText: 'Flat No (e.g., A_101)',
+                  border: OutlineInputBorder(),
                 ),
-                SizedBox(height: screenHeight * 0.02),
-                TextFormField(
-                  controller: _ownerNameController,
-                  decoration: InputDecoration(labelText: 'Owner Name'),
-                  validator: (value) =>
-                      value!.isEmpty ? 'Please enter owner name' : null,
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'Please enter flat number';
+                  }
+                  if (!RegExp(r'^[A-Z]_\d{3}$').hasMatch(value)) {
+                    return 'Flat number must start with a letter, followed by "_" and three digits';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 16),
+              TextFormField(
+                controller: _ownerNameController,
+                decoration: InputDecoration(
+                  labelText: 'Owner Name',
+                  border: OutlineInputBorder(),
                 ),
-                SizedBox(height: screenHeight * 0.02),
-                TextFormField(
-                  controller: _peopleController,
-                  decoration: InputDecoration(labelText: 'No. of People'),
-                  keyboardType: TextInputType.number,
-                  validator: (value) =>
-                      value!.isEmpty || !RegExp(r'^\d+$').hasMatch(value)
-                          ? 'Please enter the number of people in digits'
-                          : null,
+                validator: (value) =>
+                    value!.isEmpty ? 'Please enter owner name' : null,
+              ),
+              SizedBox(height: 16),
+              TextFormField(
+                controller: _peopleController,
+                decoration: InputDecoration(
+                  labelText: 'No. of People',
+                  border: OutlineInputBorder(),
                 ),
-                SizedBox(height: screenHeight * 0.02),
-                TextFormField(
-                  controller: _emailController,
-                  decoration: InputDecoration(labelText: 'Email'),
-                  validator: (value) =>
-                      value!.isEmpty ? 'Please enter email' : null,
+                validator: (value) =>
+                    value!.isEmpty ? 'Please enter number of people' : null,
+              ),
+              SizedBox(height: 16),
+              TextFormField(
+                controller: _emailController,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
                 ),
-                SizedBox(height: screenHeight * 0.02),
-                TextFormField(
-                  controller: _contactNoController,
-                  decoration: InputDecoration(labelText: 'Contact No'),
-                  validator: (value) =>
-                      value!.isEmpty ? 'Please enter contact number' : null,
+                validator: (value) =>
+                    value!.isEmpty ? 'Please enter email' : null,
+              ),
+              SizedBox(height: 16),
+              TextFormField(
+                controller: _contactNoController,
+                decoration: InputDecoration(
+                  labelText: 'Contact No',
+                  border: OutlineInputBorder(),
                 ),
-                SizedBox(height: screenHeight * 0.02),
-                Center(
+                validator: (value) =>
+                    value!.isEmpty ? 'Please enter contact number' : null,
+              ),
+              SizedBox(height: 24),
+              Center(
+                child: ElevatedButton(
+                  onPressed: _isSendingEmail ? null : _submitForm,
                   child: _isSendingEmail
-                      ? CircularProgressIndicator()
-                      : ElevatedButton(
-                          onPressed: _submitForm,
-                          child: Text('Send Email'),
-                        ),
+                      ? CircularProgressIndicator(
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        )
+                      : Text('Add Member'),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

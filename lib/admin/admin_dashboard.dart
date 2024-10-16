@@ -160,7 +160,7 @@ class _HomePageAState extends State<HomePageA> {
                       Icons.person_add,
                       'Add Admin',
                       context,
-                      AddAdminScreen(onMemberAdded: (memberData) {
+                      AddMemberForm(onMemberAdded: (memberData) {
                         // Handle the new member data here
                       }),
                     ),
