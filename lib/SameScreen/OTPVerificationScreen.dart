@@ -4,10 +4,11 @@ import 'CreatePasswordScreen.dart';
 class OTPVerificationScreen extends StatefulWidget {
   final String email;
   final String generatedOTP;
-
+  final String username;
   const OTPVerificationScreen({
     Key? key,
     required this.email,
+    required this.username,
     required this.generatedOTP,
   }) : super(key: key);
 
@@ -25,7 +26,8 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => CreatePasswordScreen(email: widget.email),
+          builder: (context) =>
+              CreatePasswordScreen(username: widget.username), // Use username
         ),
       );
     } else {

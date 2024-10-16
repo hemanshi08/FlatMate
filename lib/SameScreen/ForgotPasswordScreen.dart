@@ -15,7 +15,7 @@ class ForgotPassword extends StatefulWidget {
 
 class _ForgotPasswordState extends State<ForgotPassword> {
   final _usernameController = TextEditingController();
-  String? _generatedOTP; // Initialize the OTP as nullable
+  String? _generatedOTP;
   final DatabaseReference dbRef = FirebaseDatabase.instance.ref();
 
   Future<String?> _fetchEmailFromUsername(String username) async {
@@ -24,24 +24,29 @@ class _ForgotPasswordState extends State<ForgotPassword> {
         dbRef.child(username.startsWith('admin_') ? 'admin' : 'residents');
 
     try {
-      final snapshot = await userRef
-          .orderByChild('username')
-          .equalTo(username)
-          .limitToFirst(1)
-          .get();
+      final snapshot = await userRef.get();
 
-      if (snapshot.exists && snapshot.value != null) {
-        final data = Map<dynamic, dynamic>.from(snapshot.value as Map);
-        if (data.isNotEmpty) {
-          email = data.values.first['email'] as String?;
-        } else {
+      if (snapshot.exists) {
+        Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
+
+        bool userFound = false;
+
+        for (var entry in data.entries) {
+          if (entry.value['username'] == username) {
+            email = entry.value['email'] as String?;
+            userFound = true;
+            break;
+          }
+        }
+
+        if (!userFound) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("User not found or data is empty.")),
+            SnackBar(content: Text("No user found with this username.")),
           );
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("No user found with this username.")),
+          SnackBar(content: Text("User not found.")),
         );
       }
     } catch (e) {
@@ -49,11 +54,11 @@ class _ForgotPasswordState extends State<ForgotPassword> {
         SnackBar(content: Text("Error fetching email: $e")),
       );
     }
+
     return email;
   }
 
-  Future<void> sendOTPEmail(String email) async {
-    // Ensure _generatedOTP is not null before sending the email
+  Future<void> sendOTPEmail(String email, String username) async {
     if (_generatedOTP == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: OTP is not generated.")),
@@ -74,14 +79,15 @@ class _ForgotPasswordState extends State<ForgotPassword> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("OTP sent to your email!")),
       );
-      // Inside the sendOTPEmail method in ForgotPassword class
+
+      // Navigate to OTPVerificationScreen
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => OTPVerificationScreen(
-            email: email, // Ensure this variable exists and is correct
-            generatedOTP:
-                _generatedOTP!, // Ensure this variable exists and is correct
+            username: username, // Pass the username here
+            email: email, // Pass the email here
+            generatedOTP: _generatedOTP!,
           ),
         ),
       );
@@ -100,7 +106,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
       if (email != null) {
         _generatedOTP =
             (Random().nextInt(9000) + 1000).toString(); // Generate OTP
-        await sendOTPEmail(email);
+        await sendOTPEmail(email, username); // Pass the username here
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Username not found.")),
@@ -168,7 +174,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
               ElevatedButton(
                 onPressed: cancel,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red, // Customize the color
+                  backgroundColor: Colors.red,
                 ),
                 child: Text('Cancel'),
               ),

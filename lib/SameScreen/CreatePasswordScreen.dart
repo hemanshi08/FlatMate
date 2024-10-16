@@ -1,19 +1,22 @@
-import 'package:flatmate/UserScreens/user_dashboard.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 
-class CreatePasswordScreen extends StatefulWidget {
-  final String email; // Add this line
+import 'LoginScreen.dart';
 
-  const CreatePasswordScreen(
-      {super.key, required this.email}); // Update constructor
+class CreatePasswordScreen extends StatefulWidget {
+  final String username;
+
+  const CreatePasswordScreen({Key? key, required this.username})
+      : super(key: key);
 
   @override
   State<CreatePasswordScreen> createState() => _CreatePasswordScreenState();
 }
 
 class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
-  bool _isnewPasswordVisible = false;
-  bool _isconfirmPasswordVisible = false;
+  bool _isNewPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
   final TextEditingController _newPasswordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
@@ -24,14 +27,13 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
     double screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF06001A), // Dark background color
+      backgroundColor: const Color(0xFF06001A),
       body: SingleChildScrollView(
         child: SizedBox(
-          height: screenHeight, // Full screen height
-          width: screenWidth, // Full screen width
+          height: screenHeight,
+          width: screenWidth,
           child: Stack(
             children: [
-              // Triangles
               Positioned(
                 top: 40,
                 right: 0,
@@ -64,8 +66,6 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                   painter: TrianglePainter1(const Color(0xFF31B3CD)),
                 ),
               ),
-
-              // Create Password form
               Center(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 31),
@@ -74,39 +74,35 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
-                        'Create Password',
+                        'Change Password',
                         style: TextStyle(
-                          fontSize: screenWidth * 0.090, // Adjust font size
-                          color: const Color(0xFFD8AFCC), // Pinkish color
+                          fontSize: screenWidth * 0.090,
+                          color: const Color(0xFFD8AFCC),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      SizedBox(height: screenHeight * 0.06), // Dynamic height
-
-                      // New password TextField
+                      SizedBox(height: screenHeight * 0.06),
                       TextField(
                         controller: _newPasswordController,
-                        obscureText: !_isnewPasswordVisible,
+                        obscureText: !_isNewPasswordVisible,
                         decoration: InputDecoration(
                           hintText: 'New Password',
-                          hintStyle: TextStyle(
-                            fontSize: screenHeight * 0.022, // Adjust font size
-                          ),
+                          hintStyle: TextStyle(fontSize: screenHeight * 0.022),
                           filled: true,
                           fillColor: Colors.white,
                           contentPadding: EdgeInsets.symmetric(
-                            vertical: screenHeight * 0.012, // Dynamic padding
+                            vertical: screenHeight * 0.012,
                             horizontal: screenWidth * 0.04,
                           ),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _isnewPasswordVisible
+                              _isNewPasswordVisible
                                   ? Icons.visibility
                                   : Icons.visibility_off,
                             ),
                             onPressed: () {
                               setState(() {
-                                _isnewPasswordVisible = !_isnewPasswordVisible;
+                                _isNewPasswordVisible = !_isNewPasswordVisible;
                               });
                             },
                           ),
@@ -115,33 +111,29 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                           ),
                         ),
                       ),
-                      SizedBox(height: screenHeight * 0.032), // Dynamic height
-
-                      // Confirm Password TextField
+                      SizedBox(height: screenHeight * 0.032),
                       TextField(
                         controller: _confirmPasswordController,
-                        obscureText: !_isconfirmPasswordVisible,
+                        obscureText: !_isConfirmPasswordVisible,
                         decoration: InputDecoration(
                           hintText: 'Confirm Password',
-                          hintStyle: TextStyle(
-                            fontSize: screenHeight * 0.022, // Adjust font size
-                          ),
+                          hintStyle: TextStyle(fontSize: screenHeight * 0.022),
                           filled: true,
                           fillColor: Colors.white,
                           contentPadding: EdgeInsets.symmetric(
-                            vertical: screenHeight * 0.012, // Dynamic padding
+                            vertical: screenHeight * 0.012,
                             horizontal: screenWidth * 0.04,
                           ),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _isconfirmPasswordVisible
+                              _isConfirmPasswordVisible
                                   ? Icons.visibility
                                   : Icons.visibility_off,
                             ),
                             onPressed: () {
                               setState(() {
-                                _isconfirmPasswordVisible =
-                                    !_isconfirmPasswordVisible;
+                                _isConfirmPasswordVisible =
+                                    !_isConfirmPasswordVisible;
                               });
                             },
                           ),
@@ -150,21 +142,16 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                           ),
                         ),
                       ),
-                      SizedBox(height: screenHeight * 0.032), // Dynamic height
-
-                      // Set Button
+                      SizedBox(height: screenHeight * 0.032),
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {
-                            _set();
-                          },
+                          onPressed: _set,
                           style: ElevatedButton.styleFrom(
                             padding: EdgeInsets.symmetric(
-                              vertical: screenHeight * 0.010, // Dynamic padding
+                              vertical: screenHeight * 0.010,
                             ),
-                            backgroundColor:
-                                const Color(0xFF31B3CD), // Cyan button
+                            backgroundColor: const Color(0xFF31B3CD),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -172,15 +159,14 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                           child: Text(
                             'SET',
                             style: TextStyle(
-                              fontSize:
-                                  screenHeight * 0.0245, // Adjust font size
+                              fontSize: screenHeight * 0.0245,
                               color: const Color(0xFF06001A),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
                       ),
-                      SizedBox(height: screenHeight * 0.032), // Dynamic height
+                      SizedBox(height: screenHeight * 0.032),
                     ],
                   ),
                 ),
@@ -192,28 +178,73 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
     );
   }
 
-  void _set() {
+  void _set() async {
     String newPassword = _newPasswordController.text;
     String confirmPassword = _confirmPasswordController.text;
 
+    // Print the username
+    print('Username: ${widget.username}');
+
+    // Validation for empty fields
     if (newPassword.isEmpty || confirmPassword.isEmpty) {
-      // Check if any field is empty
       _showErrorDialog('Please fill in all fields.');
       return;
     }
 
+    // Check if the new password matches the confirm password
     if (newPassword == confirmPassword) {
-      // If passwords match, navigate to the UserDashboardScreen
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomePage()),
-      );
+      try {
+        DatabaseReference adminRef =
+            FirebaseDatabase.instance.ref().child('admin');
+
+        DataSnapshot adminSnapshot = await adminRef
+            .orderByChild('username')
+            .equalTo(widget.username)
+            .get();
+
+        if (adminSnapshot.exists) {
+          // Update password in the 'admin' table
+          String adminKey = adminSnapshot.children.first.key!;
+          await adminRef.child(adminKey).update({'password': newPassword});
+        } else {
+          // Check if the user exists in the 'residents' table by username
+          DatabaseReference residentRef =
+              FirebaseDatabase.instance.ref().child('residents');
+
+          DataSnapshot residentSnapshot = await residentRef
+              .orderByChild('username')
+              .equalTo(widget.username)
+              .get();
+
+          if (residentSnapshot.exists) {
+            // Update password in the 'residents' table
+            String residentKey = residentSnapshot.children.first.key!;
+            await residentRef
+                .child(residentKey)
+                .update({'password': newPassword});
+          } else {
+            _showErrorDialog('User not found in database.');
+            return;
+          }
+        }
+
+        // Navigate to the dashboard after successful update
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => LoginScreen()),
+        );
+      } catch (e) {
+        print('Error updating password: $e');
+        // Show error message if the update fails
+        _showErrorDialog('Failed to update password. Please try again.');
+      }
     } else {
-      // Display error message
+      // Show error if passwords do not match
       _showErrorDialog('The new password and confirmation do not match.');
     }
   }
 
+  // Helper function to show error dialogs
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
@@ -235,7 +266,6 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
   }
 }
 
-// TrianglePainter1 and TrianglePainter2 remain the same
 class TrianglePainter1 extends CustomPainter {
   final Color color;
   TrianglePainter1(this.color);
@@ -244,12 +274,10 @@ class TrianglePainter1 extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final Paint paint = Paint()..color = color;
     final Path path = Path();
-
     path.moveTo(120, 180);
     path.lineTo(size.width, 0);
     path.lineTo(0, size.height);
     path.close();
-
     canvas.drawPath(path, paint);
   }
 
@@ -265,12 +293,10 @@ class TrianglePainter2 extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final Paint paint = Paint()..color = color;
     final Path path = Path();
-
     path.moveTo(100, 150);
     path.lineTo(size.width, 0);
     path.lineTo(0, size.height);
     path.close();
-
     canvas.drawPath(path, paint);
   }
 
