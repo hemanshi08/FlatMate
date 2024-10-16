@@ -170,48 +170,71 @@ class DatabaseService {
     }
   }
 
-// Fetch announcements for a specific admin as a stream
+  // Public method to generate a new announcement ID
+  String? generateAnnouncementId() {
+    return _announcementsRef.push().key; // Use the private reference internally
+  }
 
-  Future<List<Map<String, String>>> fetchAnnouncements() async {
+// Fetch announcements for a specific admin
+  Future<List<Map<String, String>>> fetchAnnouncements(String adminId) async {
     List<Map<String, String>> announcements = [];
 
     try {
       // Get the data snapshot from the announcements node
       final DatabaseEvent event = await _announcementsRef.once();
-      final DataSnapshot snapshot =
-          event.snapshot; // Get the snapshot from the event
+      final DataSnapshot snapshot = event.snapshot;
 
       // Check if the snapshot has data
-      if (snapshot.exists) {
-        // Iterate through each child and add to the list
-        for (var child in snapshot.children) {
-          announcements.add({
-            "announcement_id": child.key!,
-            ...Map<String, String>.from(child.value as Map<dynamic, dynamic>),
-          });
+      if (snapshot.value != null) {
+        // Safely cast the snapshot value
+        Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
+
+        // Filter announcements by adminId
+        for (var entry in data.entries) {
+          final key = entry.key;
+          final value = entry.value;
+
+          // Ensure value is a map before accessing its properties
+          if (value is Map<dynamic, dynamic>) {
+            Map<String, dynamic> announcement =
+                Map<String, dynamic>.from(value);
+
+            // Check if admin_id exists and matches adminId
+            if (announcement["admin_id"] == adminId) {
+              announcements.add({
+                "announcement_id": key.toString(), // Ensure key is a string
+                ...Map<String, String>.from(
+                    announcement), // Convert all values to String
+              });
+            }
+          }
         }
       }
     } catch (e) {
-      print("Error fetching announcements: $e");
+      print("Error fetching announcements: ${e.toString()}");
     }
 
     return announcements;
   }
 
-  // Add a new announcement to the database
-  Future<void> addAnnouncement(Map<String, String> announcement) async {
+// Add a new announcement to the database
+  Future<void> addAnnouncement(
+      Map<String, String> announcement, String adminId) async {
     try {
-      // If the announcement does not have an ID, generate one
-      if (announcement["announcement_id"] == null) {
-        announcement["announcement_id"] = _announcementsRef.push().key!;
-      }
+      announcement["admin_id"] =
+          adminId; // Add the adminId to the announcement data
 
-      // Save the announcement to the database using the announcement ID
-      await _announcementsRef
-          .child(announcement["announcement_id"]!)
-          .set(announcement);
+      // Check if announcement_id exists and is a non-empty string
+      if (announcement.containsKey("announcement_id") &&
+          announcement["announcement_id"]!.isNotEmpty) {
+        await _announcementsRef
+            .child(announcement["announcement_id"]!)
+            .set(announcement);
+      } else {
+        throw Exception("Announcement ID is not provided or is empty.");
+      }
     } catch (e) {
-      print("Error adding announcement: $e");
+      print("Error adding announcement: ${e.toString()}");
     }
   }
 

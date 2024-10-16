@@ -22,11 +22,16 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
   // Method to fetch announcements from the database
   Future<void> _fetchAnnouncements() async {
     try {
-      List<Map<String, String>> fetchedAnnouncements =
-          await DatabaseService().fetchAnnouncements();
-      setState(() {
-        announcements = fetchedAnnouncements;
-      });
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? adminId = prefs.getString('admin_id'); // Use 'admin_id'
+
+      if (adminId != null) {
+        List<Map<String, String>> fetchedAnnouncements =
+            await DatabaseService().fetchAnnouncements(adminId);
+        setState(() {
+          announcements = fetchedAnnouncements;
+        });
+      }
     } catch (e) {
       print("Error fetching announcements: $e");
     }
@@ -35,7 +40,28 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
   // Method to handle adding a new announcement
   Future<void> _addAnnouncement(Map<String, String> newAnnouncement) async {
     try {
-      await DatabaseService().addAnnouncement(newAnnouncement);
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? adminId = prefs.getString('admin_id'); // Fetching 'admin_id'
+
+      // Check if adminId is null
+      if (adminId == null) {
+        print("Admin ID not found");
+        return; // Exit the function if adminId is null
+      }
+
+      // Generate announcement_id
+      String? announcementId = DatabaseService().generateAnnouncementId();
+      if (announcementId == null) {
+        print("Failed to generate announcement ID");
+        return; // Exit the function if announcementId is null
+      }
+
+      // Add the adminId and announcement_id to the newAnnouncement map
+      newAnnouncement["announcement_id"] = announcementId;
+      newAnnouncement["admin_id"] =
+          adminId; // Use 'admin_id' instead of 'adminId'
+
+      await DatabaseService().addAnnouncement(newAnnouncement, adminId);
       _fetchAnnouncements(); // Refresh the list
     } catch (e) {
       print("Error adding announcement: $e");
