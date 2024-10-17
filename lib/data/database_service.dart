@@ -21,6 +21,9 @@ class DatabaseService {
   final DatabaseReference _announcementsRef =
       FirebaseDatabase.instance.ref().child('announcements');
 
+  final DatabaseReference _complaintsRef =
+      FirebaseDatabase.instance.ref().child('complaints');
+
   // Function to validate admin credentials
   Future<Map<String, dynamic>?> getAdminCredentials(String username) async {
     try {
@@ -334,4 +337,55 @@ class DatabaseService {
       return null;
     }
   }
+
+  // Add a new complaint
+  Future<void> addComplaint(Map<String, dynamic> complaintData) async {
+    try {
+      String complaintId =
+          _complaintsRef.push().key!; // Generate a unique ID for the complaint
+      complaintData['complain_id'] = complaintId;
+
+      await _complaintsRef.child(complaintId).set(complaintData);
+      print('Complaint added successfully');
+    } catch (e) {
+      print("Error adding complaint: $e");
+    }
+  }
+
+// Fetch complaints by user_id
+  Future<List<Map<String, dynamic>>> getComplaintsByUserId(
+      String userId) async {
+    List<Map<String, dynamic>> complaintsList = [];
+
+    try {
+      final complaintsRef = _database.child('complaints');
+      DataSnapshot snapshot = await complaintsRef.get();
+
+      if (snapshot.exists && snapshot.value != null) {
+        Map<dynamic, dynamic> complaintsData =
+            snapshot.value as Map<dynamic, dynamic>;
+
+        complaintsData.forEach((key, value) {
+          if (value is Map && value['user_id'] == userId) {
+            complaintsList.add({
+              'complaint_id': value['complain_id'],
+              'date': value['date'],
+              'description': value['description'],
+              'status': value['status'],
+              'title': value['title'],
+              'user_id': value['user_id'],
+            });
+          }
+        });
+      } else {
+        print("No complaints found for the user.");
+      }
+    } catch (e) {
+      print("Error fetching user complaints: $e");
+    }
+
+    return complaintsList;
+  }
+
+  
 }

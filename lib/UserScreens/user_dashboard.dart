@@ -1,3 +1,4 @@
+import 'package:flatmate/SameScreen/LoginScreen.dart';
 import 'package:flatmate/UserScreens/Announcement.dart';
 import 'package:flatmate/UserScreens/complain_first.dart';
 import 'package:flatmate/UserScreens/expense_list.dart';
@@ -343,7 +344,8 @@ class _HomePageState extends State<HomePage> {
                 title: Text('Logout',
                     style: TextStyle(color: const Color(0xFF06001A))),
                 onTap: () {
-                  // Handle logout
+                  _databaseService.logout(
+                      context, LoginScreen()); // Call the logout method
                 },
               ),
             ],

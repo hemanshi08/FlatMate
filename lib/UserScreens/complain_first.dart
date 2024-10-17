@@ -1,4 +1,5 @@
 import 'package:flatmate/UserScreens/expense_list.dart';
+import 'package:flatmate/data/database_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flatmate/UserScreens/maintanance_screen.dart';
 import 'package:flatmate/UserScreens/user_dashboard.dart';
@@ -6,8 +7,8 @@ import 'package:flatmate/drawer/contact_details.dart';
 import 'package:flatmate/drawer/language.dart';
 import 'package:flatmate/drawer/profile.dart';
 import 'package:flatmate/drawer/security_details.dart';
-
-void main() => runApp(ComplaintsApp());
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
 
 class ComplaintsApp extends StatelessWidget {
   const ComplaintsApp({super.key});
@@ -32,6 +33,68 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int selectedIndexButton = 0;
   int _selectedIndex = 0;
+  String? userId; // To store user ID fetched from SharedPreferences
+  List<Map<String, dynamic>> solvedComplaints = [];
+  List<Map<String, dynamic>> unsolvedComplaints = [];
+  bool isLoading = true; // To show loading while data is being fetched
+
+  // Instantiate DatabaseService
+  final DatabaseService _databaseService = DatabaseService();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserComplaints();
+  }
+
+  Future<void> _fetchUserComplaints() async {
+    setState(() {
+      isLoading = true; // Start loading when fetching begins
+    });
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userId =
+        prefs.getString('user_id'); // Get user_id from SharedPreferences
+
+    if (userId == null) {
+      print("User ID not found in SharedPreferences");
+      setState(() {
+        isLoading = false; // Stop loading if user ID is not found
+      });
+      return; // Exit the function if userId is null
+    }
+
+    try {
+      // Fetch all complaints based on user_id
+      List<Map<String, dynamic>> complaints =
+          await _databaseService.getComplaintsByUserId(userId);
+
+      setState(() {
+        // Initialize complaints lists to empty
+        solvedComplaints = [];
+        unsolvedComplaints = [];
+
+        if (complaints.isNotEmpty) {
+          // Separate solved and unsolved complaints
+          solvedComplaints = complaints
+              .where((complaint) => complaint['status'] == 'Solved')
+              .toList();
+          unsolvedComplaints = complaints
+              .where((complaint) => complaint['status'] == 'Unsolved')
+              .toList();
+        } else {
+          print("No complaints found for user ID: $userId");
+        }
+
+        isLoading = false; // Stop loading after fetching data
+      });
+    } catch (e) {
+      print("Error fetching user complaints: $e");
+      setState(() {
+        isLoading = false; // Stop loading on error
+      });
+    }
+  }
 
   // Function to open the complaint form
   void _openComplaintForm() {
@@ -40,7 +103,9 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
       MaterialPageRoute(
         builder: (context) => ComplaintFormScreen(),
       ),
-    );
+    ).then((_) {
+      _fetchUserComplaints(); // Refresh complaints after submitting a new one
+    });
   }
 
   @override
@@ -50,7 +115,6 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
 
     return Scaffold(
       key: _scaffoldKey,
-
       appBar: AppBar(
         backgroundColor: const Color(0xFF06001A),
         automaticallyImplyLeading: false,
@@ -183,22 +247,39 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
           ),
           SizedBox(height: 16),
           Expanded(
-            child: selectedIndexButton == 0
-                ? ComplaintsListView(
-                    isSolved: true,
-                    onComplaintSelected: (complaint) {
-                      _showComplaintDetails(context, complaint);
-                    },
-                  )
-                : ComplaintsListView(
-                    isSolved: false,
-                    onComplaintSelected: (complaint) {
-                      _showComplaintDetails(context, complaint);
-                    },
-                  ),
+            child: isLoading
+                ? Center(child: CircularProgressIndicator())
+                : selectedIndexButton == 0
+                    ? ComplaintsListView(
+                        complaints: solvedComplaints,
+                        onComplaintSelected: (complaint) {
+                          // Convert to Map<String, String>
+                          Map<String, String> complaintData = {
+                            'title': complaint['title'] ?? '',
+                            'date': complaint['date'] ?? '',
+                            'description': complaint['description'] ?? '',
+                          };
+                          _showComplaintDetails(context, complaintData);
+                        },
+                        isSolved: true, // Pass true for solved complaints
+                      )
+                    : ComplaintsListView(
+                        complaints: unsolvedComplaints,
+                        onComplaintSelected: (complaint) {
+                          // Convert to Map<String, String>
+                          Map<String, String> complaintData = {
+                            'title': complaint['title'] ?? '',
+                            'date': complaint['date'] ?? '',
+                            'description': complaint['description'] ?? '',
+                          };
+                          _showComplaintDetails(context, complaintData);
+                        },
+                        isSolved: false, // Pass false for unsolved complaints
+                      ),
           ),
         ],
       ),
+
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 2,
         onTap: (index) {
@@ -458,9 +539,19 @@ class _ComplaintFormScreenState extends State<ComplaintFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _ownerNameController = TextEditingController();
-  final _wingFlatController = TextEditingController();
   final _complaintDescriptionController = TextEditingController();
   DateTime? _selectedDate;
+
+  // Instantiate DatabaseService
+  final DatabaseService _databaseService = DatabaseService();
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _ownerNameController.dispose();
+    _complaintDescriptionController.dispose();
+    super.dispose();
+  }
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -477,29 +568,17 @@ class _ComplaintFormScreenState extends State<ComplaintFormScreen> {
   }
 
   @override
-  void dispose() {
-    _titleController.dispose();
-    _ownerNameController.dispose();
-    _wingFlatController.dispose();
-    _complaintDescriptionController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: 180, // Keep your toolbar height as you wanted
+        toolbarHeight: 180,
         backgroundColor: const Color(0xFF06001A),
-        automaticallyImplyLeading:
-            false, // Disable default back button behavior
+        automaticallyImplyLeading: false,
         flexibleSpace: Padding(
-          padding: const EdgeInsets.only(
-              left: 16, top: 50), // Adjust the left and top padding as needed
+          padding: const EdgeInsets.only(left: 16, top: 50),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Back Arrow Icon
               IconButton(
                 icon: Icon(
                   Icons.arrow_back,
@@ -509,10 +588,7 @@ class _ComplaintFormScreenState extends State<ComplaintFormScreen> {
                   Navigator.pop(context);
                 },
               ),
-              // Title
-              SizedBox(
-                height: 10,
-              ), // This pushes the title towards the bottom
+              SizedBox(height: 10),
               Center(
                 child: Text(
                   "Complain Form",
@@ -524,7 +600,7 @@ class _ComplaintFormScreenState extends State<ComplaintFormScreen> {
                   ),
                 ),
               ),
-              Spacer(), // Optional: Adjust the spacing between the title and other elements if needed
+              Spacer(),
             ],
           ),
         ),
@@ -535,7 +611,6 @@ class _ComplaintFormScreenState extends State<ComplaintFormScreen> {
           key: _formKey,
           child: ListView(
             children: [
-              // Title Field
               TextFormField(
                 controller: _titleController,
                 decoration: InputDecoration(
@@ -550,32 +625,15 @@ class _ComplaintFormScreenState extends State<ComplaintFormScreen> {
                 },
               ),
               SizedBox(height: 16),
-
-              // Owner Name Field
-              TextFormField(
-                controller: _ownerNameController,
-                decoration: InputDecoration(
-                  labelText: 'Owner Name',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your name';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-
-              // Date Picker Field
               GestureDetector(
                 onTap: () => _selectDate(context),
                 child: AbsorbPointer(
                   child: TextFormField(
                     decoration: InputDecoration(
                       labelText: _selectedDate == null
-                          ? 'Select Date & Time'
-                          : _selectedDate.toString(),
+                          ? 'Select Date'
+                          : DateFormat('yyyy-MM-dd')
+                              .format(_selectedDate!), // Format only the date
                       border: OutlineInputBorder(),
                       suffixIcon: Icon(Icons.calendar_today),
                     ),
@@ -583,24 +641,6 @@ class _ComplaintFormScreenState extends State<ComplaintFormScreen> {
                 ),
               ),
               SizedBox(height: 16),
-
-              // Wing-Flat Number Field
-              TextFormField(
-                controller: _wingFlatController,
-                decoration: InputDecoration(
-                  labelText: 'Wing - Flat No',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your wing-flat number';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-
-              // Complaint Description Field
               TextFormField(
                 controller: _complaintDescriptionController,
                 maxLines: 5,
@@ -616,13 +656,28 @@ class _ComplaintFormScreenState extends State<ComplaintFormScreen> {
                 },
               ),
               SizedBox(height: 16),
-
-              // Submit Button
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   if (_formKey.currentState!.validate()) {
-                    // Submit form
-                    Navigator.pop(context);
+                    SharedPreferences prefs =
+                        await SharedPreferences.getInstance();
+                    String? userId = prefs.getString('user_id');
+
+                    if (userId != null) {
+                      Map<String, dynamic> complaintData = {
+                        'user_id': userId,
+                        'title': _titleController.text,
+                        'description': _complaintDescriptionController.text,
+                        'date': DateFormat('yyyy-MM-dd').format(_selectedDate!),
+                        'status': 'Unsolved',
+                      };
+
+                      await _databaseService.addComplaint(complaintData);
+
+                      Navigator.pop(context);
+                    } else {
+                      print("User ID not found in SharedPreferences");
+                    }
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -650,43 +705,36 @@ class _ComplaintFormScreenState extends State<ComplaintFormScreen> {
 }
 
 class ComplaintsListView extends StatelessWidget {
-  final bool isSolved;
-  final Function(Map<String, String>) onComplaintSelected;
+  final List<Map<String, dynamic>> complaints; // Accept the list of complaints
+  final Function(Map<String, dynamic>)
+      onComplaintSelected; // Callback for selected complaint
+  final bool
+      isSolved; // Indicates if the list is for solved or unsolved complaints
 
-  const ComplaintsListView(
-      {super.key, required this.isSolved, required this.onComplaintSelected});
+  const ComplaintsListView({
+    Key? key,
+    required this.complaints,
+    required this.onComplaintSelected,
+    required this.isSolved,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Example data, replace with your actual data
-    final complaints = [
-      {
-        'title': isSolved ? 'Solved Complaint 1' : 'Unsolved Complaint 1',
-        'date': '2024-09-23',
-        'description': 'This is a description of the complaint.',
-      },
-      {
-        'title': isSolved ? 'Solved Complaint 2' : 'Unsolved Complaint 2',
-        'date': '2024-09-23',
-        'description': 'This is a description of the complaint.',
-      },
-    ];
-
     return ListView.builder(
       itemCount: complaints.length,
       itemBuilder: (context, index) {
         final complaint = complaints[index];
         return Card(
-          elevation: 4, // Elevation adds a shadow effect
+          elevation: 4,
           margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12), // Rounded corners
+            borderRadius: BorderRadius.circular(12),
           ),
           child: ListTile(
             title: Text(complaint['title']!),
             subtitle: Text(complaint['date']!),
             onTap: () {
-              onComplaintSelected(complaint);
+              onComplaintSelected(complaint); // This will now work
             },
           ),
         );
