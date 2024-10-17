@@ -38,7 +38,7 @@ class _AddMemberFormState extends State<AddMemberForm> {
 
       final email = _emailController.text;
       final flatNo = _flatNoController.text;
-      final username = flatNo; // Using flat number as username
+      final username = '$flatNo'; // Using flat number as username
       final password = _generateRandomPassword();
 
       try {
@@ -54,7 +54,7 @@ class _AddMemberFormState extends State<AddMemberForm> {
         );
 
         // Add member to Firebase only if email sends successfully
-        await _addMemberToDatabase(newMember, password);
+        await _addMemberToDatabase(newMember, password, username);
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Member added and email sent successfully')),
@@ -92,24 +92,18 @@ class _AddMemberFormState extends State<AddMemberForm> {
   }
 
   Future<void> _addMemberToDatabase(
-      Map<String, String> memberData, String password) async {
-    final String userId = _generateUserId(); // Generate a unique user ID
-    final String username =
-        memberData['flatNo']!; // Using flat number as username
+      Map<String, String> memberData, String password, String username) async {
+    // Generate a unique key using push()
+    final newMemberRef = _database.child("residents").push();
+    final adminId = newMemberRef.key;
 
-    // Push member data to the database, including user_id and username
-    await _database.child("residents").push().set({
+    // Push member data to the database, including admin_id and username
+    await newMemberRef.set({
+      'admin_id': adminId, // Store the generated admin_id
       ...memberData,
       'password': password, // Store the password in the database
-      'user_id': userId, // Store user_id in the database
       'username': username, // Store username in the database
     });
-  }
-
-  // Function to generate a unique user ID
-  String _generateUserId() {
-    // You can customize the user ID generation logic as needed
-    return 'user_${DateTime.now().millisecondsSinceEpoch}';
   }
 
   String _generateRandomPassword() {

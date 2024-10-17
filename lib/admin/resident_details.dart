@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'addmemeber_form.dart'; // Import the AddMemberForm file
 
 class ResidentsPage extends StatefulWidget {
@@ -9,58 +10,42 @@ class ResidentsPage extends StatefulWidget {
 }
 
 class _ResidentsPageState extends State<ResidentsPage> {
-  List<Map<String, String>> residents = [
-    {
-      "flatNo": "A-101",
-      "ownerName": "Lakshmi Kant",
-      "people": "4",
-      "email": "lakshmikant100@gmail.com",
-      "contactNo": "9876543210",
-    },
-    {
-      "flatNo": "A-102",
-      "ownerName": "Janki Bhut",
-      "people": "5",
-      "email": "jankibhut25@gmail.com",
-      "contactNo": "1234567890",
-    },
-    {
-      "flatNo": "A-103",
-      "ownerName": "Bhayva Garnara",
-      "people": "6",
-      "email": "bhavyagarnara@gmail.com",
-      "contactNo": "0987654321",
-    },
-    {
-      "flatNo": "A-104",
-      "ownerName": "Hemant Sata",
-      "people": "4",
-      "email": "hemantsata12@gmail.com",
-      "contactNo": "1122334455",
-    },
-    {
-      "flatNo": "A-201",
-      "ownerName": "Gunjan Maru",
-      "people": "3",
-      "email": "gunjan45@gmail.com",
-      "contactNo": "5566778899",
-    },
-    {
-      "flatNo": "A-202",
-      "ownerName": "Bhargrv Garnara",
-      "people": "6",
-      "email": "bgarnara2013@gmail.com",
-      "contactNo": "2233445566",
-    },
-  ];
-
+  List<Map<String, String>> residents = [];
   List<Map<String, String>>? filteredResidents;
   final TextEditingController _searchController = TextEditingController();
+  final DatabaseReference _databaseReference =
+      FirebaseDatabase.instance.ref('residents');
 
   @override
   void initState() {
     super.initState();
-    filteredResidents = residents; // Show all residents by default
+    _fetchResidents(); // Fetch residents from Firebase
+  }
+
+  // Fetch residents data from Firebase
+  Future<void> _fetchResidents() async {
+    _databaseReference.onValue.listen((event) {
+      final data = event.snapshot.value as Map<dynamic, dynamic>?;
+      if (data != null) {
+        final List<Map<String, String>> loadedResidents = [];
+        data.forEach((key, value) {
+          loadedResidents.add({
+            "id": key, // Store the unique key for deletion
+            "flatNo": value["flatNo"]?.toString() ?? "N/A",
+            "ownerName": value["ownerName"]?.toString() ?? "N/A",
+            "people": value["people"]?.toString() ?? "N/A",
+            "email": value["email"]?.toString() ?? "N/A",
+            "contactNo": value["contactNo"]?.toString() ?? "N/A",
+          });
+        });
+        setState(() {
+          residents = loadedResidents;
+          filteredResidents = residents; // Display all by default
+        });
+      } else {
+        print("No data available in Firebase");
+      }
+    });
   }
 
   void _searchResidents(String query) {
@@ -82,16 +67,43 @@ class _ResidentsPageState extends State<ResidentsPage> {
     _searchResidents('');
   }
 
-  void _addMember(Map<String, String> newMember) {
-    setState(() {
-      residents.add(newMember);
-      filteredResidents = residents; // Refresh the displayed list
-    });
+  // Delete resident from Firebase
+  Future<void> _deleteResident(String id) async {
+    await _databaseReference.child(id).remove();
+    _fetchResidents(); // Refresh the list after deletion
+  }
+
+  // Show confirmation dialog before deletion
+  void _confirmDelete(String id) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Delete Member"),
+          content: Text("Are you sure you want to delete this member?"),
+          actions: [
+            TextButton(
+              child: Text("Cancel"),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+              },
+            ),
+            TextButton(
+              child: Text("Yes"),
+              onPressed: () {
+                _deleteResident(id).then((_) {
+                  Navigator.of(context).pop(); // Close dialog
+                });
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Get the screen width and height
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
@@ -114,15 +126,6 @@ class _ResidentsPageState extends State<ResidentsPage> {
             Navigator.pop(context);
           },
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.menu),
-            color: Colors.white,
-            onPressed: () {
-              // Open drawer or menu
-            },
-          ),
-        ],
       ),
       body: Padding(
         padding: EdgeInsets.symmetric(
@@ -132,7 +135,6 @@ class _ResidentsPageState extends State<ResidentsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Search bar with underline
             TextField(
               controller: _searchController,
               onChanged: _searchResidents,
@@ -170,11 +172,18 @@ class _ResidentsPageState extends State<ResidentsPage> {
                     ),
                     child: TextButton(
                       onPressed: () {
+                        // Navigate to AddMemberForm screen and wait for result
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                AddMemberForm(onMemberAdded: _addMember),
+                            builder: (context) => AddMemberForm(
+                              onMemberAdded: (newMember) {
+                                setState(() {
+                                  residents.add(newMember);
+                                  filteredResidents = residents;
+                                });
+                              },
+                            ),
                           ),
                         );
                       },
@@ -184,14 +193,14 @@ class _ResidentsPageState extends State<ResidentsPage> {
                           Text(
                             '  Add Members',
                             style: TextStyle(
-                              color: Colors.black, // Text color
+                              color: Colors.black,
                               fontSize:
                                   screenWidth * 0.045, // Responsive font size
                             ),
                           ),
                           Icon(
                             Icons.add,
-                            color: Colors.black, // Icon color
+                            color: Colors.black,
                           ),
                         ],
                       ),
@@ -201,64 +210,43 @@ class _ResidentsPageState extends State<ResidentsPage> {
               ],
             ),
             SizedBox(height: screenHeight * 0.03), // Responsive spacing
-            // ListView for residents
             Expanded(
-              child: ListView.builder(
-                itemCount: filteredResidents?.length ?? 0,
-                itemBuilder: (context, index) {
-                  final resident = filteredResidents![index];
-                  return Card(
-                    elevation: 2,
-                    margin: EdgeInsets.symmetric(vertical: 8.0),
-                    child: ListTile(
-                      title: Text(
-                        resident['ownerName']!,
-                        style: TextStyle(
-                          fontSize: screenWidth * 0.049, // Responsive font size
-                        ),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(height: 4),
-                          Text(
-                            'Flat No: ${resident['flatNo']}',
-                            style: TextStyle(
-                              fontSize:
-                                  screenWidth * 0.04, // Responsive font size
+              child: filteredResidents == null || filteredResidents!.isEmpty
+                  ? Center(child: Text("No residents found"))
+                  : ListView.builder(
+                      itemCount: filteredResidents?.length ?? 0,
+                      itemBuilder: (context, index) {
+                        final resident = filteredResidents![index];
+                        final residentId = resident['id'] ?? '';
+                        return Card(
+                          elevation: 2,
+                          margin: EdgeInsets.symmetric(vertical: 8.0),
+                          child: ListTile(
+                            title: Text(
+                              resident['ownerName'] ?? "N/A",
+                              style: TextStyle(
+                                fontSize: screenWidth * 0.049,
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Flat No: ${resident['flatNo'] ?? "N/A"}'),
+                                Text(
+                                    'No. of People: ${resident['people'] ?? "N/A"}'),
+                                Text('Email: ${resident['email'] ?? "N/A"}'),
+                                Text(
+                                    'Contact No: ${resident['contactNo'] ?? "N/A"}'),
+                              ],
+                            ),
+                            trailing: IconButton(
+                              icon: Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _confirmDelete(residentId),
                             ),
                           ),
-                          SizedBox(height: 8),
-                          Text(
-                            'No. of People: ${resident['people']}',
-                            style: TextStyle(
-                              fontSize:
-                                  screenWidth * 0.04, // Responsive font size
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Email: ${resident['email']}',
-                            style: TextStyle(
-                              fontSize:
-                                  screenWidth * 0.04, // Responsive font size
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Contact No: ${resident['contactNo']}', // Display contact number
-                            style: TextStyle(
-                              fontSize:
-                                  screenWidth * 0.04, // Responsive font size
-                            ),
-                          ),
-                          SizedBox(height: screenHeight * 0.004),
-                        ],
-                      ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ],
         ),

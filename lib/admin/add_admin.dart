@@ -22,10 +22,30 @@ class _AddMemberFormState extends State<AddMemberForm> {
   bool _isSendingEmail = false; // Loading state
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
 
-  Future<void> _submitForm() async {
+  Future<String> _generateNewAdminId() async {
+    final adminRef = _database.child("admin");
+    final snapshot = await adminRef.get();
+
+    int maxId = 1;
+    if (snapshot.exists) {
+      // Iterate through existing admin IDs to find the highest ID
+      snapshot.children.forEach((admin) {
+        final adminId = admin.child('admin_id').value.toString();
+        final idNum = int.tryParse(adminId.replaceAll("admin_", "")) ?? 1;
+        if (idNum > maxId) {
+          maxId = idNum;
+        }
+      });
+    }
+    // Increment the highest ID to generate the next admin ID
+    final newAdminId = 'admin_${(maxId + 1).toString().padLeft(3, '0')}';
+    return newAdminId;
+  }
+
+  Future<void> _submitForm({bool isAdmin = false}) async {
     if (_formKey.currentState!.validate()) {
       setState(() {
-        _isSendingEmail = true; // Set loading state
+        _isSendingEmail = true;
       });
 
       final newMember = {
@@ -38,14 +58,10 @@ class _AddMemberFormState extends State<AddMemberForm> {
 
       final email = _emailController.text;
       final flatNo = _flatNoController.text;
-      final username = flatNo; // Using flat number as username
+      final username = isAdmin ? await _generateNewAdminId() : 'admin_$flatNo';
       final password = _generateRandomPassword();
 
       try {
-        // Generate a sequential user ID
-        final userId = await _generateUserId();
-
-        // Send email to the resident
         await _sendEmailToMember(
           email: email,
           flatNo: flatNo,
@@ -56,21 +72,20 @@ class _AddMemberFormState extends State<AddMemberForm> {
           password: password,
         );
 
-        // Add member to Firebase only if email sends successfully
-        await _addMemberToDatabase(newMember, password, userId);
+        await _addMemberToDatabase(newMember, password, username);
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Member added and email sent successfully')),
+          SnackBar(content: Text('Admin added and email sent successfully')),
         );
-        widget.onMemberAdded(newMember); // Notify parent widget
-        Navigator.pop(context); // Close form screen
+        widget.onMemberAdded(newMember);
+        Navigator.pop(context);
       } catch (error) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $error')),
         );
       } finally {
         setState(() {
-          _isSendingEmail = false; // Reset loading state
+          _isSendingEmail = false;
         });
       }
     }
@@ -95,39 +110,16 @@ class _AddMemberFormState extends State<AddMemberForm> {
   }
 
   Future<void> _addMemberToDatabase(
-      Map<String, String> memberData, String password, String userId) async {
-    final String username =
-        memberData['flatNo']!; // Using flat number as username
+      Map<String, String> memberData, String password, String username) async {
+    final newMemberRef = _database.child("admin").push();
+    final userId = newMemberRef.key;
 
-    // Push member data to the database, including user_id and username
-    await _database.child("residents").child(userId).set({
+    await newMemberRef.set({
+      'admin_id': userId,
+      'username': username,
       ...memberData,
-      'password': password, // Store the password in the database
-      'user_id': userId, // Store user_id in the database
-      'username': username, // Store username in the database
+      'password': password,
     });
-  }
-
-  // Function to generate a unique, sequential user ID
-  Future<String> _generateUserId() async {
-    final residentsSnapshot = await _database.child("residents").once();
-    final residentsMap =
-        residentsSnapshot.snapshot.value as Map<dynamic, dynamic>?;
-
-    int highestId = 1;
-
-    if (residentsMap != null) {
-      residentsMap.forEach((key, value) {
-        String userId = key;
-        if (userId.startsWith('user_')) {
-          int idNumber = int.parse(userId.split('_')[1]);
-          if (idNumber > highestId) {
-            highestId = idNumber;
-          }
-        }
-      });
-    }
-    return 'user_${(highestId + 1).toString().padLeft(3, '0')}';
   }
 
   String _generateRandomPassword() {
@@ -162,7 +154,7 @@ class _AddMemberFormState extends State<AddMemberForm> {
               SizedBox(height: screenHeight * 0.02),
               Center(
                 child: Text(
-                  "Add Resident",
+                  "Add Admin",
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -242,7 +234,10 @@ class _AddMemberFormState extends State<AddMemberForm> {
               SizedBox(height: 24),
               Center(
                 child: ElevatedButton(
-                  onPressed: _isSendingEmail ? null : _submitForm,
+                  onPressed: _isSendingEmail
+                      ? null
+                      : () => _submitForm(
+                          isAdmin: false), // Set to true if adding admin
                   child: _isSendingEmail
                       ? CircularProgressIndicator(
                           valueColor:
