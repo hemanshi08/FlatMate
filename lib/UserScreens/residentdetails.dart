@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class ResidentsPage extends StatefulWidget {
   const ResidentsPage({super.key});
@@ -8,59 +9,46 @@ class ResidentsPage extends StatefulWidget {
 }
 
 class _ResidentsPageState extends State<ResidentsPage> {
-  // Initial list of residents
-  List<Map<String, String>> residents = [
-    {
-      "flatNo": "A-101",
-      "ownerName": "Lakshmi Kant",
-      "people": "4",
-      "email": "lakshmikant100@gmail.com"
-    },
-    {
-      "flatNo": "A-102",
-      "ownerName": "Janki Bhut",
-      "people": "5",
-      "email": "jankibhut25@gmail.com"
-    },
-    {
-      "flatNo": "A-103",
-      "ownerName": "Bhayva Garnara",
-      "people": "6",
-      "email": "bhavyagarnara@gmail.com"
-    },
-    {
-      "flatNo": "A-104",
-      "ownerName": "Hemant Sata",
-      "people": "4",
-      "email": "hemantsata12@gmail.com"
-    },
-    {
-      "flatNo": "A-201",
-      "ownerName": "Gunjan Maru",
-      "people": "3",
-      "email": "gunjan45@gmail.com"
-    },
-    {
-      "flatNo": "A-202",
-      "ownerName": "Bhargrv Garnara",
-      "people": "6",
-      "email": "bgarnara2013@gmail.com"
-    },
-  ];
-
-  // List for displaying filtered results
+  // List of residents fetched from Firebase
+  List<Map<String, String>> residents = [];
   List<Map<String, String>>? filteredResidents;
 
-  // Controller for the search bar
   final TextEditingController _searchController = TextEditingController();
+  final DatabaseReference _databaseReference =
+      FirebaseDatabase.instance.ref('residents');
 
   @override
   void initState() {
     super.initState();
-    filteredResidents = residents; // Show all residents by default
+    _fetchResidents(); // Fetch residents from Firebase
   }
 
-  // Search function that filters by flat number or owner name
+  // Fetch residents data from Firebase
+  Future<void> _fetchResidents() async {
+    _databaseReference.onValue.listen((event) {
+      final data = event.snapshot.value as Map<dynamic, dynamic>?;
+      if (data != null) {
+        final List<Map<String, String>> loadedResidents = [];
+        data.forEach((key, value) {
+          print("Fetched Resident Data: $value"); // Debugging statement
+          loadedResidents.add({
+            "flatNo": value["flatNo"]?.toString() ?? "N/A",
+            "ownerName": value["ownerName"]?.toString() ?? "N/A",
+            "people": value["people"]?.toString() ?? "N/A",
+            "email": value["email"]?.toString() ?? "N/A",
+            "contactNo": value["contactNo"]?.toString() ?? "N/A",
+          });
+        });
+        setState(() {
+          residents = loadedResidents;
+          filteredResidents = residents; // Display all by default
+        });
+      } else {
+        print("No data available in Firebase");
+      }
+    });
+  }
+
   void _searchResidents(String query) {
     final results = residents.where((resident) {
       final flatNo = resident['flatNo']?.toLowerCase() ?? '';
@@ -107,7 +95,6 @@ class _ResidentsPageState extends State<ResidentsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Search bar with underline
             TextField(
               controller: _searchController,
               onChanged: _searchResidents,
@@ -119,50 +106,46 @@ class _ResidentsPageState extends State<ResidentsPage> {
                   onPressed: _clearSearch,
                 ),
                 border: UnderlineInputBorder(
-                  // Underline only
-                  borderSide:
-                      BorderSide(color: Colors.pink), // Change color as needed
+                  borderSide: BorderSide(color: Colors.pink),
                 ),
                 enabledBorder: UnderlineInputBorder(
-                  // When not focused
-                  borderSide:
-                      BorderSide(color: Colors.grey), // Change to desired color
+                  borderSide: BorderSide(color: Colors.grey),
                 ),
                 focusedBorder: UnderlineInputBorder(
-                  // When focused
-                  borderSide:
-                      BorderSide(color: Colors.cyan), // Change to desired color
+                  borderSide: BorderSide(color: Colors.cyan),
                 ),
                 contentPadding:
                     EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
               ),
             ),
             SizedBox(height: 20),
-            // ListView for residents
             Expanded(
-              child: ListView.builder(
-                itemCount:
-                    filteredResidents?.length ?? 0, // Use null-aware access
-                itemBuilder: (context, index) {
-                  final resident =
-                      filteredResidents![index]; // Non-null assertion
-                  return Card(
-                    elevation: 2,
-                    margin: EdgeInsets.symmetric(vertical: 8.0),
-                    child: ListTile(
-                      title: Text(resident['ownerName']!),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Flat No: ${resident['flatNo']}'),
-                          Text('No. of People: ${resident['people']}'),
-                          Text('Email: ${resident['email']}'),
-                        ],
-                      ),
+              child: filteredResidents == null || filteredResidents!.isEmpty
+                  ? Center(child: Text("No residents found"))
+                  : ListView.builder(
+                      itemCount: filteredResidents?.length ?? 0,
+                      itemBuilder: (context, index) {
+                        final resident = filteredResidents![index];
+                        return Card(
+                          elevation: 2,
+                          margin: EdgeInsets.symmetric(vertical: 8.0),
+                          child: ListTile(
+                            title: Text(resident['ownerName'] ?? "N/A"),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Flat No: ${resident['flatNo'] ?? "N/A"}'),
+                                Text(
+                                    'No. of People: ${resident['people'] ?? "N/A"}'),
+                                Text('Email: ${resident['email'] ?? "N/A"}'),
+                                Text(
+                                    'Contact No: ${resident['contactNo'] ?? "N/A"}'),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ],
         ),

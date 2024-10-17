@@ -1,7 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_database/firebase_database.dart';
 
-class RulesPage extends StatelessWidget {
+class RulesPage extends StatefulWidget {
   const RulesPage({super.key});
+
+  @override
+  _RulesPageState createState() => _RulesPageState();
+}
+
+class _RulesPageState extends State<RulesPage> {
+  final DatabaseReference _rulesRef = FirebaseDatabase.instance.ref('rules');
+  List<Rule> rulesList = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchRules();
+  }
+
+  Future<void> _fetchRules() async {
+    DatabaseEvent event = await _rulesRef.once();
+    final rulesData = event.snapshot.value as Map<dynamic, dynamic>?;
+
+    if (rulesData != null) {
+      rulesData.forEach((key, value) {
+        final rule = Rule(
+          description: value['description'] ?? 'No Description',
+          addedBy: value['addedBy'] ?? 'Unknown',
+        );
+        rulesList.add(rule);
+      });
+      setState(() {}); // Update UI after fetching data
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +57,6 @@ class RulesPage extends StatelessWidget {
             Navigator.pop(context);
           },
         ),
-        //
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -34,40 +64,21 @@ class RulesPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Heading with blue color and underline
               Text(
                 'Must follow below rules',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 20,
-                  color: Colors.red, // Heading color set to blue
-                  // decoration: TextDecoration.underline,
-                  decorationColor:
-                      Colors.red, // Underline matches the heading color
-                  decorationThickness: 2,
+                  color: Colors.red,
                 ),
               ),
               SizedBox(height: 10),
-              RuleCard(
-                text:
-                    'Residents are responsible for maintaining the cleanliness and condition of their unit.',
-                screenWidth: screenWidth,
-              ),
-              RuleCard(
-                text:
-                    'In case of emergencies (e.g., major leaks, electrical issues), contact 1234567890 immediately.',
-                screenWidth: screenWidth,
-              ),
-              RuleCard(
-                text:
-                    'Please respect quiet hours from 11PM to 6AM. Excessive noise or disturbances are not permitted.',
-                screenWidth: screenWidth,
-              ),
-              RuleCard(
-                text:
-                    'Lock all doors and windows when leaving your unit. Report any security concerns to 9874563210.',
-                screenWidth: screenWidth,
-              ),
+              for (var rule in rulesList)
+                RuleCard(
+                  description: rule.description,
+                  addedBy: rule.addedBy,
+                  screenWidth: screenWidth,
+                ),
             ],
           ),
         ),
@@ -77,11 +88,14 @@ class RulesPage extends StatelessWidget {
 }
 
 class RuleCard extends StatelessWidget {
-  final String text;
+  final String description;
+  final String addedBy;
   final double screenWidth;
 
-  const RuleCard({super.key, 
-    required this.text,
+  const RuleCard({
+    super.key,
+    required this.description,
+    required this.addedBy,
     required this.screenWidth,
   });
 
@@ -92,33 +106,55 @@ class RuleCard extends StatelessWidget {
       child: Container(
         width: screenWidth,
         decoration: BoxDecoration(
-          color: Color.fromARGB(
-              255, 245, 247, 248), // New background color for the card
+          color: Color.fromARGB(255, 245, 247, 248),
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withOpacity(0.2),
               spreadRadius: 2,
               blurRadius: 5,
-              offset: Offset(0, 3), // Changes position of shadow
+              offset: Offset(0, 3),
             ),
           ],
         ),
         padding: const EdgeInsets.all(16.0),
-        child: Text(
-          text,
-          style: TextStyle(
-              color: const Color.fromARGB(255, 63, 62, 62),
-              fontSize: 17), // Text style remains consistent
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: 5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment
+                  .spaceBetween, // Aligns content on either side
+              children: [
+                Expanded(
+                  child: Text(
+                    description,
+                    style: TextStyle(
+                      color: const Color.fromARGB(255, 63, 62, 62),
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 10), // Spacing between description and addedBy
+                Text(
+                  'Added by: $addedBy',
+                  style: TextStyle(
+                    color: const Color.fromARGB(255, 100, 100, 100),
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-// void main() => runApp(MaterialApp(
-//       theme: ThemeData(
-//         primarySwatch: Colors.deepPurple,
-//       ),
-//       home: RulesPage(),
-//     ));
+class Rule {
+  final String description;
+  final String addedBy;
+
+  Rule({required this.description, required this.addedBy});
+}

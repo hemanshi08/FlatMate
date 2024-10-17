@@ -17,7 +17,6 @@ import 'package:flatmate/UserScreens/visitor_log.dart';
 import 'package:flatmate/drawer/contact_details.dart';
 import 'package:flatmate/drawer/language.dart';
 
-
 // import 'package:flatmate_apartment/UserScreens/complain_screen.dart';
 
 import 'package:flutter/material.dart';

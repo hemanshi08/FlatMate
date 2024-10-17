@@ -38,7 +38,7 @@ class _AddMemberFormState extends State<AddMemberForm> {
 
       final email = _emailController.text;
       final flatNo = _flatNoController.text;
-      final username = flatNo; // Using flat number as username
+      final username = '$flatNo'; // Using flat number as username
       final password = _generateRandomPassword();
 
       try {
@@ -57,7 +57,11 @@ class _AddMemberFormState extends State<AddMemberForm> {
         );
 
         // Add member to Firebase only if email sends successfully
+<<<<<<< HEAD
         await _addMemberToDatabase(newMember, password, userId);
+=======
+        await _addMemberToDatabase(newMember, password, username);
+>>>>>>> master2
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Member added and email sent successfully')),
@@ -95,19 +99,30 @@ class _AddMemberFormState extends State<AddMemberForm> {
   }
 
   Future<void> _addMemberToDatabase(
+<<<<<<< HEAD
       Map<String, String> memberData, String password, String userId) async {
     final String username =
         memberData['flatNo']!; // Using flat number as username
 
     // Push member data to the database, including user_id and username
     await _database.child("residents").child(userId).set({
+=======
+      Map<String, String> memberData, String password, String username) async {
+    // Generate a unique key using push()
+    final newMemberRef = _database.child("residents").push();
+    final adminId = newMemberRef.key;
+
+    // Push member data to the database, including admin_id and username
+    await newMemberRef.set({
+      'admin_id': adminId, // Store the generated admin_id
+>>>>>>> master2
       ...memberData,
       'password': password, // Store the password in the database
-      'user_id': userId, // Store user_id in the database
       'username': username, // Store username in the database
     });
   }
 
+<<<<<<< HEAD
   // Function to generate a unique, sequential user ID
   Future<String> _generateUserId() async {
     final residentsSnapshot = await _database.child("residents").once();
@@ -130,6 +145,8 @@ class _AddMemberFormState extends State<AddMemberForm> {
     return 'user_${(highestId + 1).toString().padLeft(3, '0')}';
   }
 
+=======
+>>>>>>> master2
   String _generateRandomPassword() {
     const characters =
         'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#\$%^&*()';
