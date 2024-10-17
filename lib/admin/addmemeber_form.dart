@@ -42,9 +42,6 @@ class _AddMemberFormState extends State<AddMemberForm> {
       final password = _generateRandomPassword();
 
       try {
-        // Generate a sequential user ID
-        final userId = await _generateUserId();
-
         // Send email to the resident
         await _sendEmailToMember(
           email: email,
@@ -57,11 +54,7 @@ class _AddMemberFormState extends State<AddMemberForm> {
         );
 
         // Add member to Firebase only if email sends successfully
-<<<<<<< HEAD
-        await _addMemberToDatabase(newMember, password, userId);
-=======
         await _addMemberToDatabase(newMember, password, username);
->>>>>>> master2
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Member added and email sent successfully')),
@@ -99,14 +92,6 @@ class _AddMemberFormState extends State<AddMemberForm> {
   }
 
   Future<void> _addMemberToDatabase(
-<<<<<<< HEAD
-      Map<String, String> memberData, String password, String userId) async {
-    final String username =
-        memberData['flatNo']!; // Using flat number as username
-
-    // Push member data to the database, including user_id and username
-    await _database.child("residents").child(userId).set({
-=======
       Map<String, String> memberData, String password, String username) async {
     // Generate a unique key using push()
     final newMemberRef = _database.child("residents").push();
@@ -115,38 +100,12 @@ class _AddMemberFormState extends State<AddMemberForm> {
     // Push member data to the database, including admin_id and username
     await newMemberRef.set({
       'admin_id': adminId, // Store the generated admin_id
->>>>>>> master2
       ...memberData,
       'password': password, // Store the password in the database
       'username': username, // Store username in the database
     });
   }
 
-<<<<<<< HEAD
-  // Function to generate a unique, sequential user ID
-  Future<String> _generateUserId() async {
-    final residentsSnapshot = await _database.child("residents").once();
-    final residentsMap =
-        residentsSnapshot.snapshot.value as Map<dynamic, dynamic>?;
-
-    int highestId = 1;
-
-    if (residentsMap != null) {
-      residentsMap.forEach((key, value) {
-        String userId = key;
-        if (userId.startsWith('user_')) {
-          int idNumber = int.parse(userId.split('_')[1]);
-          if (idNumber > highestId) {
-            highestId = idNumber;
-          }
-        }
-      });
-    }
-    return 'user_${(highestId + 1).toString().padLeft(3, '0')}';
-  }
-
-=======
->>>>>>> master2
   String _generateRandomPassword() {
     const characters =
         'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#\$%^&*()';
