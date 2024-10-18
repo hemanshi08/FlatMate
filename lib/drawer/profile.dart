@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../data/database_service.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -8,28 +10,81 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String ownerName = 'John Doe';
-  String wingNumber = 'A';
-  String flatNumber = '101';
-  String email = 'johndoe@example.com';
-  String phoneNumber = '+1 (123) 456-7890';
-  int numberOfPeople = 4;
-  String password = 'mysecurepassword'; // Changed to a visible password
+  String ownerName = 'Loading...';
+  String wingNumber = 'Loading...';
+  String flatNumber = 'Loading...';
+  String email = 'Loading...';
+  String phoneNumber = 'Loading...';
+  int numberOfPeople = 0;
 
   final _formKey = GlobalKey<FormState>();
 
-  // Temporary variables for editing
   String editedName = '';
   String editedPhoneNumber = '';
   String editedPeople = '';
-  String editedPassword = '';
 
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+
+  // Load profile data based on userId stored in SharedPreferences
+  Future<void> _loadUserProfile() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userId = prefs.getString('user_id'); // Fetching the stored user ID
+
+    if (userId != null) {
+      print('Fetched user_id: $userId');
+
+      // You can now use the userId to fetch the details from your database.
+      final userDetails = await DatabaseService().fetchUserDetails(
+          userId); // Assume you have a function to fetch user details
+
+      if (userDetails != null) {
+        print(
+            'User details fetched: $userDetails'); // Print user details for debugging
+        setState(() {
+          ownerName = userDetails['ownerName'] ?? 'N/A';
+          flatNumber = userDetails['flatNo'] ?? 'N/A';
+          email = userDetails['email'] ?? 'N/A';
+          phoneNumber = userDetails['contactNo'] ?? 'N/A';
+          numberOfPeople = userDetails['eople'] ?? 0;
+        });
+      } else {
+        print('No details found for user ID: $userId');
+        setState(() {
+          ownerName = 'N/A';
+          wingNumber = 'N/A';
+          flatNumber = 'N/A';
+          email = 'N/A';
+          phoneNumber = 'N/A';
+          numberOfPeople = 0;
+        });
+      }
+    } else {
+      print('No user_id found in SharedPreferences.');
+    }
+  }
+
+  // Save profile data to SharedPreferences
+  Future<void> _saveUserProfileToPreferences() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    await prefs.setString('ownerName', ownerName);
+    await prefs.setString('wingNumber', wingNumber);
+    await prefs.setString('flatNumber', flatNumber);
+    await prefs.setString('email', email);
+    await prefs.setString('phoneNumber', phoneNumber);
+    await prefs.setInt('numberOfPeople', numberOfPeople);
+  }
+
+  // Open Edit Profile Modal
   void _editProfile() {
     setState(() {
       editedName = ownerName;
       editedPhoneNumber = phoneNumber;
       editedPeople = numberOfPeople.toString();
-      editedPassword = password;
     });
     showModalBottomSheet(
       context: context,
@@ -45,7 +100,6 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Name field
                   TextFormField(
                     initialValue: editedName,
                     decoration: InputDecoration(labelText: 'Owner Name'),
@@ -59,7 +113,6 @@ class _ProfilePageState extends State<ProfilePage> {
                       return null;
                     },
                   ),
-                  // Phone number field
                   TextFormField(
                     initialValue: editedPhoneNumber,
                     decoration: InputDecoration(labelText: 'Phone Number'),
@@ -73,7 +126,6 @@ class _ProfilePageState extends State<ProfilePage> {
                       return null;
                     },
                   ),
-                  // Number of people field
                   TextFormField(
                     initialValue: editedPeople,
                     decoration: InputDecoration(labelText: 'Number of People'),
@@ -91,35 +143,6 @@ class _ProfilePageState extends State<ProfilePage> {
                       return null;
                     },
                   ),
-                  SizedBox(height: 10),
-
-                  // Password field (always visible)
-                  TextFormField(
-                    initialValue: password,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(10.0), // Rounded corners
-                        borderSide: BorderSide(
-                          color: Colors.grey, // Border color
-                          width: 2.0, // Border width
-                        ),
-                      ),
-                    ),
-                    onChanged: (value) {
-                      editedPassword = value;
-                    },
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a password';
-                      }
-                      if (value.length < 6) {
-                        return 'Password must be at least 6 characters';
-                      }
-                      return null;
-                    },
-                  ),
                   SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () {
@@ -128,8 +151,8 @@ class _ProfilePageState extends State<ProfilePage> {
                           ownerName = editedName;
                           phoneNumber = editedPhoneNumber;
                           numberOfPeople = int.parse(editedPeople);
-                          password = editedPassword;
                         });
+                        _saveUserProfileToPreferences();
                         Navigator.pop(context);
                       }
                     },
@@ -182,14 +205,11 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             SizedBox(height: 20),
             ProfileRow(label: 'Name', value: ownerName),
-            ProfileRow(label: 'Wing_Flat', value: '$wingNumber,_,$flatNumber'),
+            ProfileRow(label: 'Wing_Flat', value: '$flatNumber'),
             ProfileRow(label: 'Email', value: email),
             ProfileRow(label: 'Phone', value: phoneNumber),
             ProfileRow(
                 label: 'Number of People', value: numberOfPeople.toString()),
-            ProfileRow(
-                label: 'Password',
-                value: password), // Displaying password directly
             SizedBox(height: 20),
             Center(
               child: ElevatedButton(
@@ -232,14 +252,14 @@ class ProfileRow extends StatelessWidget {
             style: TextStyle(
               fontSize: 16.0,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[700],
+              color: Colors.black87,
             ),
           ),
           Text(
             value,
             style: TextStyle(
               fontSize: 16.0,
-              color: Colors.black87,
+              color: Colors.black54,
             ),
           ),
         ],

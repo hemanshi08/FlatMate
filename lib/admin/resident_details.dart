@@ -15,6 +15,7 @@ class _ResidentsPageState extends State<ResidentsPage> {
   final TextEditingController _searchController = TextEditingController();
   final DatabaseReference _databaseReference =
       FirebaseDatabase.instance.ref('residents');
+  Stream<DatabaseEvent>? _databaseStream;
 
   @override
   void initState() {
@@ -22,10 +23,21 @@ class _ResidentsPageState extends State<ResidentsPage> {
     _fetchResidents(); // Fetch residents from Firebase
   }
 
+  @override
+  void dispose() {
+    // Cancel the database stream subscription when the widget is disposed
+    if (_databaseStream != null) {
+      _databaseStream!.listen((event) {}).cancel();
+    }
+    super.dispose();
+  }
+
   // Fetch residents data from Firebase
   Future<void> _fetchResidents() async {
-    _databaseReference.onValue.listen((event) {
+    _databaseStream = _databaseReference.onValue;
+    _databaseStream!.listen((event) {
       final data = event.snapshot.value as Map<dynamic, dynamic>?;
+
       if (data != null) {
         final List<Map<String, String>> loadedResidents = [];
         data.forEach((key, value) {
@@ -73,7 +85,8 @@ class _ResidentsPageState extends State<ResidentsPage> {
 
     // Instead of fetching all residents again, just remove the deleted resident from the local list
     setState(() {
-      residents.removeWhere((resident) => resident['id'] == id);
+      residents
+          .removeWhere((resident) => resident['id'] == id); // Corrected field
       filteredResidents = residents; // Update filtered list if search is active
     });
   }
@@ -183,10 +196,8 @@ class _ResidentsPageState extends State<ResidentsPage> {
                           MaterialPageRoute(
                             builder: (context) => AddMemberForm(
                               onMemberAdded: (newMember) {
-                                setState(() {
-                                  residents.add(newMember);
-                                  filteredResidents = residents;
-                                });
+                                // No need to manually add to residents list
+                                // The stream will update automatically
                               },
                             ),
                           ),

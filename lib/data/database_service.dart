@@ -23,6 +23,23 @@ class DatabaseService {
 
   final DatabaseReference _complaintsRef =
       FirebaseDatabase.instance.ref().child('complaints');
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+
+  Future<Map<String, dynamic>?> fetchUserDetails(String userId) async {
+    try {
+      DocumentSnapshot doc = await _db.collection('users').doc(userId).get();
+
+      if (doc.exists) {
+        return doc.data() as Map<String, dynamic>;
+      } else {
+        print('User document does not exist.');
+        return null;
+      }
+    } catch (e) {
+      print('Error fetching user details: $e');
+      return null;
+    }
+  }
 
   // Function to validate admin credentials
   Future<Map<String, dynamic>?> getAdminCredentials(String username) async {
@@ -386,6 +403,4 @@ class DatabaseService {
 
     return complaintsList;
   }
-
-  
 }
