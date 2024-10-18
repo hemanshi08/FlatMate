@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class MaintenanceRequestForm extends StatefulWidget {
   const MaintenanceRequestForm({super.key});
@@ -14,6 +15,48 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
   String? _amount;
   String? _selectedOption = 'All Members';
   String? _selectedMember;
+  List<Map<String, String>> _members = []; // List to hold fetched members
+
+  final DatabaseReference _residentsRef =
+      FirebaseDatabase.instance.ref().child('residents');
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchMembers();
+  }
+
+  // Fetch members from Firebase (only flatNo and ownerName)
+  Future<void> _fetchMembers() async {
+    try {
+      DatabaseEvent event = await _residentsRef.once();
+      DataSnapshot snapshot = event.snapshot;
+
+      if (snapshot.exists && snapshot.value != null) {
+        Map<dynamic, dynamic> userMap = snapshot.value as Map<dynamic, dynamic>;
+
+        setState(() {
+          _members = userMap.values
+              .where((user) =>
+                  user['ownerName'] != null &&
+                  user['flatNo'] != null) // Ensure required fields exist
+              .map((user) => {
+                    'flatNo': user['flatNo'].toString(),
+                    'ownerName': user['ownerName'].toString(),
+                  })
+              .toList();
+        });
+
+        if (_members.isEmpty) {
+          print("No residents with valid data found in the database.");
+        }
+      } else {
+        print("No residents found.");
+      }
+    } catch (error) {
+      print("Error fetching residents: $error");
+    }
+  }
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
@@ -31,28 +74,22 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
-        return ListView(
-          children: [
-            ListTile(
-              title: Text('Member 1'),
+        return ListView.builder(
+          itemCount: _members.length,
+          itemBuilder: (context, index) {
+            final member = _members[index];
+            return ListTile(
+              title: Text('${member['flatNo']}_${member['ownerName']}'),
               onTap: () {
                 setState(() {
-                  _selectedMember = 'Member 1';
+                  // Update this line to format the member display as required
+                  _selectedMember =
+                      '${member['flatNo']}_${member['ownerName']}';
                 });
                 Navigator.pop(context);
               },
-            ),
-            ListTile(
-              title: Text('Member 2'),
-              onTap: () {
-                setState(() {
-                  _selectedMember = 'Member 2';
-                });
-                Navigator.pop(context);
-              },
-            ),
-            // Add more ListTile widgets for additional members
-          ],
+            );
+          },
         );
       },
     );
@@ -75,7 +112,7 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               IconButton(
-                icon: Icon(Icons.arrow_back, color: Colors.white),
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
                 onPressed: () => Navigator.pop(context),
               ),
               SizedBox(height: screenHeight * 0.02),
@@ -90,7 +127,7 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
                   ),
                 ),
               ),
-              Spacer(),
+              const Spacer(),
             ],
           ),
         ),
@@ -116,7 +153,7 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
                       });
                     },
                   ),
-                  Text('All Members'),
+                  const Text('All Members'),
                   Radio<String>(
                     value: 'Particular Member',
                     groupValue: _selectedOption,
@@ -129,7 +166,7 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
                       });
                     },
                   ),
-                  Text('Particular Member'),
+                  const Text('Particular Member'),
                 ],
               ),
               if (_selectedOption == 'Particular Member' &&
@@ -144,7 +181,7 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
               SizedBox(height: screenHeight * 0.02),
               // Title TextFormField
               TextFormField(
-                decoration: InputDecoration(labelText: 'Title'),
+                decoration: const InputDecoration(labelText: 'Title'),
                 validator: (value) => value == null || value.isEmpty
                     ? 'Please enter a title'
                     : null,
@@ -153,7 +190,7 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
               SizedBox(height: screenHeight * 0.02),
               // Date TextFormField
               TextFormField(
-                decoration: InputDecoration(labelText: 'Date'),
+                decoration: const InputDecoration(labelText: 'Date'),
                 validator: (value) => value == null || value.isEmpty
                     ? 'Please enter a date'
                     : null,
@@ -162,7 +199,7 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
               SizedBox(height: screenHeight * 0.02),
               // Amount TextFormField
               TextFormField(
-                decoration: InputDecoration(labelText: 'Amount'),
+                decoration: const InputDecoration(labelText: 'Amount'),
                 validator: (value) => value == null || value.isEmpty
                     ? 'Please enter an amount'
                     : null,
@@ -177,7 +214,7 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
                     padding: EdgeInsets.symmetric(
                       vertical: screenHeight * 0.01,
                     ),
-                    minimumSize: Size(double.infinity, 50),
+                    minimumSize: const Size(double.infinity, 50),
                   ),
                   onPressed: _submitForm,
                   child: Text(
