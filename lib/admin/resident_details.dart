@@ -70,7 +70,12 @@ class _ResidentsPageState extends State<ResidentsPage> {
   // Delete resident from Firebase
   Future<void> _deleteResident(String id) async {
     await _databaseReference.child(id).remove();
-    _fetchResidents(); // Refresh the list after deletion
+
+    // Instead of fetching all residents again, just remove the deleted resident from the local list
+    setState(() {
+      residents.removeWhere((resident) => resident['id'] == id);
+      filteredResidents = residents; // Update filtered list if search is active
+    });
   }
 
   // Show confirmation dialog before deletion
