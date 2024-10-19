@@ -28,49 +28,71 @@ class _AddMemberFormState extends State<AddMemberForm> {
         _isSendingEmail = true; // Set loading state
       });
 
-      final newMember = {
-        'flatNo': _flatNoController.text,
-        'ownerName': _ownerNameController.text,
-        'people': _peopleController.text,
-        'email': _emailController.text,
-        'contactNo': _contactNoController.text,
-      };
-
       final email = _emailController.text;
       final flatNo = _flatNoController.text;
-      final username = '$flatNo'; // Using flat number as username
-      final password = _generateRandomPassword();
 
-      try {
-        // Send email to the resident
-        await _sendEmailToMember(
-          email: email,
-          flatNo: flatNo,
-          ownerName: _ownerNameController.text,
-          people: _peopleController.text,
-          contactNo: _contactNoController.text,
-          username: username,
-          password: password,
-        );
+      // Check if email already exists
+      if (await _isEmailUnique(email)) {
+        final newMember = {
+          'flatNo': _flatNoController.text,
+          'ownerName': _ownerNameController.text,
+          'people': _peopleController.text,
+          'email': email,
+          'contactNo': _contactNoController.text,
+        };
 
-        // Add member to Firebase only if email sends successfully
-        await _addMemberToDatabase(newMember, password, username);
+        final username = '$flatNo'; // Using flat number as username
+        final password = _generateRandomPassword();
 
+        try {
+          // Send email to the resident
+          await _sendEmailToMember(
+            email: email,
+            flatNo: flatNo,
+            ownerName: _ownerNameController.text,
+            people: _peopleController.text,
+            contactNo: _contactNoController.text,
+            username: username,
+            password: password,
+          );
+
+          // Add member to Firebase only if email sends successfully
+          await _addMemberToDatabase(newMember, password, username);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Member added and email sent successfully')),
+          );
+          widget.onMemberAdded(newMember); // Notify parent widget
+          Navigator.pop(context); // Close form screen
+        } catch (error) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $error')),
+          );
+        } finally {
+          setState(() {
+            _isSendingEmail = false; // Reset loading state
+          });
+        }
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Member added and email sent successfully')),
+          SnackBar(
+              content: Text('Email already exists. Please use another email.')),
         );
-        widget.onMemberAdded(newMember); // Notify parent widget
-        Navigator.pop(context); // Close form screen
-      } catch (error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $error')),
-        );
-      } finally {
         setState(() {
           _isSendingEmail = false; // Reset loading state
         });
       }
     }
+  }
+
+  Future<bool> _isEmailUnique(String email) async {
+    final snapshot = await _database
+        .child('residents')
+        .orderByChild('email')
+        .equalTo(email)
+        .once();
+    return (snapshot.snapshot.value ==
+        null); // Email is unique if no match found
   }
 
   Future<void> _sendEmailToMember({
@@ -95,11 +117,11 @@ class _AddMemberFormState extends State<AddMemberForm> {
       Map<String, String> memberData, String password, String username) async {
     // Generate a unique key using push()
     final newMemberRef = _database.child("residents").push();
-    final adminId = newMemberRef.key;
+    final userId = newMemberRef.key;
 
     // Push member data to the database, including admin_id and username
     await newMemberRef.set({
-      'admin_id': adminId, // Store the generated admin_id
+      'user_id': userId, // Store the generated admin_id
       ...memberData,
       'password': password, // Store the password in the database
       'username': username, // Store username in the database
@@ -212,8 +234,15 @@ class _AddMemberFormState extends State<AddMemberForm> {
                   labelText: 'Contact No',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) =>
-                    value!.isEmpty ? 'Please enter contact number' : null,
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'Please enter contact number';
+                  }
+                  if (!RegExp(r'^[6-9]\d{9}$').hasMatch(value)) {
+                    return 'Please enter a valid 10-digit mobile number';
+                  }
+                  return null;
+                },
               ),
               SizedBox(height: 24),
               Center(

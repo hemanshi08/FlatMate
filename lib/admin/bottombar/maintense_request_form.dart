@@ -15,7 +15,7 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
   String? _amount;
   String? _selectedOption = 'All Members';
   String? _selectedMember;
-  List<Map<String, String>> _members = []; // List to hold fetched members
+  List<Map<String, String?>> _members = []; // List to hold fetched members
 
   final DatabaseReference _residentsRef =
       FirebaseDatabase.instance.ref().child('residents');
@@ -26,29 +26,37 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
     _fetchMembers();
   }
 
-  // Fetch members from Firebase (only flatNo and ownerName)
   Future<void> _fetchMembers() async {
     try {
       DatabaseEvent event = await _residentsRef.once();
       DataSnapshot snapshot = event.snapshot;
 
       if (snapshot.exists && snapshot.value != null) {
-        Map<dynamic, dynamic> userMap = snapshot.value as Map<dynamic, dynamic>;
+        Map<dynamic, dynamic>? userMap =
+            snapshot.value as Map<dynamic, dynamic>?;
 
-        setState(() {
-          _members = userMap.values
-              .where((user) =>
+        if (userMap != null) {
+          setState(() {
+            _members = userMap.entries.where((entry) {
+              var user = entry.value;
+              return user != null &&
                   user['ownerName'] != null &&
-                  user['flatNo'] != null) // Ensure required fields exist
-              .map((user) => {
-                    'flatNo': user['flatNo'].toString(),
-                    'ownerName': user['ownerName'].toString(),
-                  })
-              .toList();
-        });
+                  user['flatNo'] != null &&
+                  user['user_id'] != null; // Ensure user_id exists
+            }).map((entry) {
+              var user = entry.value;
+              return {
+                'flatNo': user['flatNo']?.toString() ?? 'Unknown Flat',
+                'ownerName': user['ownerName']?.toString() ?? 'Unknown Owner',
+                'userId': user['user_id']?.toString() ??
+                    '', // Use user_id from residents
+              };
+            }).toList();
+          });
 
-        if (_members.isEmpty) {
-          print("No residents with valid data found in the database.");
+          if (_members.isEmpty) {
+            print("No residents with valid data found in the database.");
+          }
         }
       } else {
         print("No residents found.");
@@ -58,14 +66,71 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
     }
   }
 
+  Future<void> _saveMaintenanceRequest() async {
+    final requestId = FirebaseDatabase.instance
+        .ref('maintenance_requests')
+        .push()
+        .key; // Generate a new request ID
+
+    if (requestId != null) {
+      // Initialize requestData with type specified for 'users'
+      final requestData = {
+        'title': _title,
+        'date': _date,
+        'amount': double.tryParse(_amount ?? '0'), // Convert amount to double
+        'status': 'Pending',
+        'users': <String, Map<String, bool>>{}, // Explicitly specify the type
+      };
+
+      // Determine which users to include based on the selected option
+      if (_selectedOption == 'All Members') {
+        for (var member in _members) {
+          final userId = member['userId']; // Safely extract userId
+
+          if (userId != null && userId.isNotEmpty) {
+            // Ensure the users map is treated as the correct type
+            (requestData['users'] as Map<String, Map<String, bool>>)[userId] = {
+              'paid': false
+            }; // Cast to correct type
+          } else {
+            print('User ID is null or empty for member: ${member['flatNo']}');
+          }
+        }
+      } else if (_selectedOption == 'Particular Member' &&
+          _selectedMember != null) {
+        final selectedUserId = _selectedMember
+            ?.split('_')[0]; // Extract userId from selected member
+
+        if (selectedUserId != null && selectedUserId.isNotEmpty) {
+          // Ensure the users map is treated as the correct type
+          (requestData['users']
+              as Map<String, Map<String, bool>>)[selectedUserId] = {
+            'paid': false
+          }; // Cast to correct type
+        } else {
+          print('Selected user ID is null or empty');
+        }
+      }
+
+      // Push the maintenance request data to the database
+      await FirebaseDatabase.instance
+          .ref('maintenance_requests/$requestId')
+          .set(requestData);
+
+      // Optionally show a success message or handle UI updates
+      print('Maintenance request saved successfully with ID: $requestId');
+    }
+  }
+
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
+      _saveMaintenanceRequest(); // Save the request to the database
       Navigator.pop(context, {
         'title': _title,
         'date': _date,
         'amount': _amount,
-        'member': _selectedMember
+        'member': _selectedMember,
       });
     }
   }
@@ -79,12 +144,12 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
           itemBuilder: (context, index) {
             final member = _members[index];
             return ListTile(
-              title: Text('${member['flatNo']}_${member['ownerName']}'),
+              title: Text(
+                  'Flat No: ${member['flatNo']}, Owner: ${member['ownerName']}'),
               onTap: () {
                 setState(() {
-                  // Update this line to format the member display as required
                   _selectedMember =
-                      '${member['flatNo']}_${member['ownerName']}';
+                      '${member['userId']}_${member['flatNo']}_${member['ownerName']}';
                 });
                 Navigator.pop(context);
               },
@@ -139,7 +204,6 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Radio buttons for selecting All Members or Particular Member
               Row(
                 children: [
                   Radio<String>(
@@ -179,7 +243,6 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
                   ),
                 ),
               SizedBox(height: screenHeight * 0.02),
-              // Title TextFormField
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Title'),
                 validator: (value) => value == null || value.isEmpty
@@ -188,7 +251,6 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
                 onSaved: (value) => _title = value,
               ),
               SizedBox(height: screenHeight * 0.02),
-              // Date TextFormField
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Date'),
                 validator: (value) => value == null || value.isEmpty
@@ -197,7 +259,6 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
                 onSaved: (value) => _date = value,
               ),
               SizedBox(height: screenHeight * 0.02),
-              // Amount TextFormField
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Amount'),
                 validator: (value) => value == null || value.isEmpty

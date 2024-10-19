@@ -1,6 +1,7 @@
 import 'package:flatmate/admin/admin_dashboard.dart';
 import 'package:flatmate/admin/bottombar/admin_complain.dart';
 import 'package:flatmate/admin/bottombar/admin_expense.dart';
+import 'package:flatmate/data/database_service.dart';
 import 'package:flatmate/drawer/contact_details.dart';
 import 'package:flatmate/drawer/language.dart';
 import 'package:flatmate/drawer/profile.dart';
@@ -18,6 +19,28 @@ class MaintenanceScreen extends StatefulWidget {
 class _MaintenanceScreenState extends State<MaintenanceScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedIndex = 0;
+
+  // Replace this with your actual database service to fetch maintenance requests
+  List<Map<String, dynamic>> maintenanceRequests = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchMaintenanceRequests(); // Fetch maintenance data when screen loads
+  }
+
+  Future<void> _fetchMaintenanceRequests() async {
+    try {
+      // Fetch the data from your service/database
+      final requests = await DatabaseService()
+          .getMaintenanceRequests(); // Replace with your actual service
+      setState(() {
+        maintenanceRequests = requests; // Assign fetched data to the list
+      });
+    } catch (e) {
+      print('Error fetching maintenance requests: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +64,6 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
         backgroundColor: const Color(0xFF06001A),
         toolbarHeight: 60.0,
         actions: [
-
           IconButton(
             icon: Icon(Icons.menu, color: Colors.white),
             iconSize: screenWidth * 0.095,
@@ -49,12 +71,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
               _scaffoldKey.currentState
                   ?.openEndDrawer(); // Open right-side drawer
             },
-
-         
-
-           ),
+          ),
         ],
-        // automaticallyImplyLeading: false, // Disable the back arrow
       ),
       endDrawer: _buildDrawer(screenWidth, screenHeight), // Right-side drawer
 
@@ -87,8 +105,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
 
                   if (result != null) {
                     // Handle the returned values (title, date, amount)
-                    print(
-                        result); // You can update the screen with these values
+                    _fetchMaintenanceRequests(); // Refresh the list after making a request
                   }
                 },
                 child: Text(
@@ -104,48 +121,42 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
 
             // Maintenance History List
             Expanded(
-              child: ListView(
-                children: [
-                  // July, 2024 Section
-                  Text(
-                    "July, 2024",
-                    style: TextStyle(
-                      fontSize: screenWidth * 0.045, // Responsive font size
-                      fontWeight: FontWeight.bold,
+              child: maintenanceRequests.isEmpty
+                  ? Center(
+                      child:
+                          CircularProgressIndicator()) // Show loader while data is being fetched
+                  : ListView.builder(
+                      itemCount: maintenanceRequests.length,
+                      itemBuilder: (context, index) {
+                        final request = maintenanceRequests[index];
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              request['date'] ??
+                                  'Unknown month', // Display the month dynamically
+                              style: TextStyle(
+                                fontSize:
+                                    screenWidth * 0.045, // Responsive font size
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: screenHeight * 0.01),
+                            maintenanceCard(
+                              screenWidth,
+                              screenHeight,
+                              textScaleFactor,
+                              request['title'] ?? 'No Title', // Dynamic title
+                              '₹${request['amount']}', // Dynamic amount
+                              request['date'] ?? 'No Date', // Dynamic date
+                              request['isPayable'] ??
+                                  false, // Dynamic payable status
+                            ),
+                            SizedBox(height: screenHeight * 0.02),
+                          ],
+                        );
+                      },
                     ),
-                  ),
-                  SizedBox(height: screenHeight * 0.01),
-                  maintenanceCard(
-                    screenWidth,
-                    screenHeight,
-                    textScaleFactor,
-                    'Maintenance Fees',
-                    '₹1000',
-                    '5 July, 2024',
-                    true, // Payable status
-                  ),
-                  SizedBox(height: screenHeight * 0.02),
-
-                  // June, 2024 Section
-                  Text(
-                    "June, 2024",
-                    style: TextStyle(
-                      fontSize: screenWidth * 0.045, // Responsive font size
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: screenHeight * 0.01),
-                  maintenanceCard(
-                    screenWidth,
-                    screenHeight,
-                    textScaleFactor,
-                    'Maintenance Fees',
-                    '₹1000',
-                    '5 June, 2024',
-                    false, // Not payable
-                  ),
-                ],
-              ),
             ),
           ],
         ),
@@ -167,7 +178,6 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
               break;
             case 1:
               // Navigate to Maintenance page when Maintenance tab is tapped
-
               break;
             case 2:
               Navigator.pushReplacement(
@@ -346,7 +356,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
   }
 }
 
-// Maintenance card widget
+// Maintenance card widget remains unchanged
 Widget maintenanceCard(
   double screenWidth,
   double screenHeight,

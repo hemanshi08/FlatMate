@@ -12,6 +12,7 @@ class DatabaseService {
 
   final DatabaseReference _adminRef =
       FirebaseDatabase.instance.ref().child('admin');
+
   final DatabaseReference _residentsRef =
       FirebaseDatabase.instance.ref().child('residents');
 
@@ -23,6 +24,9 @@ class DatabaseService {
 
   final DatabaseReference _complaintsRef =
       FirebaseDatabase.instance.ref().child('complaints');
+
+  final DatabaseReference _maintenanceRequestsRef =
+      FirebaseDatabase.instance.ref().child('maintenance_requests');
 
   // Function to validate admin credentials
   Future<Map<String, dynamic>?> getAdminCredentials(String username) async {
@@ -387,5 +391,26 @@ class DatabaseService {
     return complaintsList;
   }
 
-  
+  // Define the method to fetch maintenance requests
+  Future<List<Map<String, dynamic>>> getMaintenanceRequests() async {
+    List<Map<String, dynamic>> maintenanceRequests = [];
+
+    try {
+      // Fetch the data from Firebase
+      DataSnapshot snapshot = await _maintenanceRequestsRef.get();
+
+      if (snapshot.exists) {
+        // Loop through each maintenance request
+        snapshot.children.forEach((child) {
+          Map<String, dynamic> requestData =
+              Map<String, dynamic>.from(child.value as Map);
+          maintenanceRequests.add(requestData);
+        });
+      }
+    } catch (e) {
+      print("Error fetching maintenance requests: $e");
+    }
+
+    return maintenanceRequests;
+  }
 }
