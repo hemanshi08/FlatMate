@@ -23,8 +23,9 @@ class _MaintenancePageState extends State<MaintenancePage> {
   int _selectedIndex = 0;
   final DatabaseReference _maintenanceRequestsRef =
       FirebaseDatabase.instance.ref().child('maintenance_requests');
-//final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   List<Map<String, dynamic>> _maintenanceRequests = [];
+
+  bool _isLoading = true; // Add loading state
 
   @override
   void initState() {
@@ -47,9 +48,7 @@ class _MaintenancePageState extends State<MaintenancePage> {
 
       if (currentUserId != null) {
         // Fetch data from Firebase
-        final DatabaseReference ref =
-            FirebaseDatabase.instance.ref().child('maintenance_requests');
-        final DataSnapshot snapshot = await ref.get();
+        final DataSnapshot snapshot = await _maintenanceRequestsRef.get();
 
         // Check if data exists
         if (snapshot.exists) {
@@ -57,9 +56,7 @@ class _MaintenancePageState extends State<MaintenancePage> {
 
           // Convert the data to a List<Map<String, dynamic>>
           final requests = data.entries.map((entry) {
-            final requestKey = entry.key; // Key for the request
-            final requestValue = Map<String, dynamic>.from(entry.value
-                as Map); // Convert each entry's value to Map<String, dynamic>
+            final requestValue = Map<String, dynamic>.from(entry.value as Map);
             return requestValue;
           }).toList();
 
@@ -90,6 +87,10 @@ class _MaintenancePageState extends State<MaintenancePage> {
       }
     } catch (e) {
       print('Error fetching maintenance requests: $e');
+    } finally {
+      setState(() {
+        _isLoading = false; // Set loading to false once data fetch is complete
+      });
     }
   }
 
@@ -125,24 +126,10 @@ class _MaintenancePageState extends State<MaintenancePage> {
         ],
       ),
       endDrawer: _buildDrawer(screenWidth), // Right-side drawer
-      body: _buildMaintenanceList(screenWidth),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator()) // Show loading indicator
+          : _buildMaintenanceList(screenWidth),
 
-      // body: SingleChildScrollView(
-      //   padding: EdgeInsets.all(16),
-      //   child: Column(
-      //     crossAxisAlignment: CrossAxisAlignment.start,
-      //     children: [
-      //       _buildMonthSection(
-      //           "August, 2024", "₹1000", "5 Aug, 2024", true, screenWidth),
-      //       SizedBox(height: 16),
-      //       _buildMonthSection(
-      //           "July, 2024", "₹1000", "5 July, 2024", false, screenWidth),
-      //       SizedBox(height: 16),
-      //       _buildMonthSection(
-      //           "June, 2024", "₹1000", "5 June, 2024", false, screenWidth),
-      //     ],
-      //   ),
-      // ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 1,
         onTap: (index) {
