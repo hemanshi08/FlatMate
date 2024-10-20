@@ -134,7 +134,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                           children: [
                             Text(
                               request['date'] ??
-                                  'Unknown month', // Display the month dynamically
+                                  'Unknown ', // Display the month dynamically
                               style: TextStyle(
                                 fontSize:
                                     screenWidth * 0.045, // Responsive font size
@@ -151,6 +151,9 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                               request['date'] ?? 'No Date', // Dynamic date
                               request['isPayable'] ??
                                   false, // Dynamic payable status
+                              (request['users'] as Map<String, dynamic>)
+                                  .keys
+                                  .toList(), // Pass user IDs as a list
                             ),
                             SizedBox(height: screenHeight * 0.02),
                           ],
@@ -365,7 +368,17 @@ Widget maintenanceCard(
   String fee,
   String date,
   bool isPayable,
+  List<String> users, // List of user IDs
 ) {
+  // Determine if the request was sent to all members or specific users
+  String recipientInfo;
+  if (users.length > 1) {
+    recipientInfo = 'Request sent to all members';
+  } else {
+    recipientInfo =
+        'Request sent to: ${users.isNotEmpty ? users[0] : 'Unknown User'}'; // Assuming you fetch and display the user name by ID
+  }
+
   return Card(
     elevation: 2,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -411,6 +424,14 @@ Widget maintenanceCard(
                 ),
                 Text(
                   date,
+                  style: TextStyle(
+                    fontSize: screenWidth * 0.04, // Responsive font size
+                    color: Colors.grey,
+                  ),
+                ),
+                SizedBox(height: screenHeight * 0.01),
+                Text(
+                  recipientInfo, // Display whether request was sent to all or specific users
                   style: TextStyle(
                     fontSize: screenWidth * 0.04, // Responsive font size
                     color: Colors.grey,
