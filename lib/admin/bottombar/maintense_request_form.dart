@@ -73,13 +73,14 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
         .key; // Generate a new request ID
 
     if (requestId != null) {
-      // Initialize requestData with type specified for 'users'
-      final requestData = {
+      // Explicitly declare the type of requestData
+      final Map<String, dynamic> requestData = {
         'title': _title,
         'date': _date,
         'amount': double.tryParse(_amount ?? '0'), // Convert amount to double
         'status': 'Pending',
-        'users': <String, Map<String, bool>>{}, // Explicitly specify the type
+        'users': <String, bool>{}, // Using bool for the users map
+        'payments': <String, Map<String, dynamic>>{}, // New payments field
       };
 
       // Determine which users to include based on the selected option
@@ -88,25 +89,41 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
           final userId = member['userId']; // Safely extract userId
 
           if (userId != null && userId.isNotEmpty) {
-            // Ensure the users map is treated as the correct type
-            (requestData['users'] as Map<String, Map<String, bool>>)[userId] = {
-              'paid': false
-            }; // Cast to correct type
+            // Add user to users map safely
+            (requestData['users'] as Map<String, bool>)[userId] =
+                true; // Add user to users map
+
+            // Initialize payment details for the user
+            (requestData['payments']
+                as Map<String, Map<String, dynamic>>)[userId] = {
+              'payment_status': 'Pending', // Default payment status
+              'transaction_id': null,
+              'payment_timestamp': null,
+              'payment_method':
+                  'Razorpay', // Or any payment method you plan to use
+            };
           } else {
             print('User ID is null or empty for member: ${member['flatNo']}');
           }
         }
       } else if (_selectedOption == 'Particular Member' &&
           _selectedMember != null) {
-        final selectedUserId = _selectedMember
-            ?.split('_')[0]; // Extract userId from selected member
+        final selectedUserId = _selectedMember?.split('_')[0]; // Extract userId
 
         if (selectedUserId != null && selectedUserId.isNotEmpty) {
-          // Ensure the users map is treated as the correct type
-          (requestData['users']
-              as Map<String, Map<String, bool>>)[selectedUserId] = {
-            'paid': false
-          }; // Cast to correct type
+          // Add user to users map safely
+          (requestData['users'] as Map<String, bool>)[selectedUserId] =
+              true; // Add user to users map
+
+          // Initialize payment details for the user
+          (requestData['payments']
+              as Map<String, Map<String, dynamic>>)[selectedUserId] = {
+            'payment_status': 'Pending', // Default payment status
+            'transaction_id': null,
+            'payment_timestamp': null,
+            'payment_method':
+                'Razorpay', // Or any payment method you plan to use
+          };
         } else {
           print('Selected user ID is null or empty');
         }
