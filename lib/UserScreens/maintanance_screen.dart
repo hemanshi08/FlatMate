@@ -1,3 +1,4 @@
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flatmate/UserScreens/complain_first.dart';
 import 'package:flatmate/UserScreens/payment_screen.dart';
 import 'package:flatmate/UserScreens/expense_list.dart';
@@ -18,6 +19,38 @@ class MaintenancePage extends StatefulWidget {
 class _MaintenancePageState extends State<MaintenancePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedIndex = 0;
+  final DatabaseReference _maintenanceRequestsRef =
+      FirebaseDatabase.instance.ref().child('maintenance_requests');
+//final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  List<Map<String, dynamic>> _maintenanceRequests = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchMaintenanceRequests();
+  }
+
+  // Fetch Maintenance Requests from Firebase
+  Future<void> _fetchMaintenanceRequests() async {
+    try {
+      DataSnapshot snapshot = await _maintenanceRequestsRef.get();
+
+      if (snapshot.exists) {
+        List<Map<String, dynamic>> fetchedRequests = [];
+        snapshot.children.forEach((request) {
+          Map<String, dynamic> requestData =
+              Map<String, dynamic>.from(request.value as Map);
+          fetchedRequests.add(requestData);
+        });
+
+        setState(() {
+          _maintenanceRequests = fetchedRequests;
+        });
+      }
+    } catch (e) {
+      print('Error fetching maintenance requests: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,23 +84,24 @@ class _MaintenancePageState extends State<MaintenancePage> {
         ],
       ),
       endDrawer: _buildDrawer(screenWidth), // Right-side drawer
+      body: _buildMaintenanceList(screenWidth),
 
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildMonthSection(
-                "August, 2024", "₹1000", "5 Aug, 2024", true, screenWidth),
-            SizedBox(height: 16),
-            _buildMonthSection(
-                "July, 2024", "₹1000", "5 July, 2024", false, screenWidth),
-            SizedBox(height: 16),
-            _buildMonthSection(
-                "June, 2024", "₹1000", "5 June, 2024", false, screenWidth),
-          ],
-        ),
-      ),
+      // body: SingleChildScrollView(
+      //   padding: EdgeInsets.all(16),
+      //   child: Column(
+      //     crossAxisAlignment: CrossAxisAlignment.start,
+      //     children: [
+      //       _buildMonthSection(
+      //           "August, 2024", "₹1000", "5 Aug, 2024", true, screenWidth),
+      //       SizedBox(height: 16),
+      //       _buildMonthSection(
+      //           "July, 2024", "₹1000", "5 July, 2024", false, screenWidth),
+      //       SizedBox(height: 16),
+      //       _buildMonthSection(
+      //           "June, 2024", "₹1000", "5 June, 2024", false, screenWidth),
+      //     ],
+      //   ),
+      // ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 1,
         onTap: (index) {
@@ -131,6 +165,28 @@ class _MaintenancePageState extends State<MaintenancePage> {
         iconSize: 30,
         elevation: 10,
         showUnselectedLabels: true,
+      ),
+    );
+  }
+
+  Widget _buildMaintenanceList(double screenWidth) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(
+        16,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: _maintenanceRequests.isNotEmpty
+            ? _maintenanceRequests.map((request) {
+                return _buildMonthSection(
+                  request['title'] ?? 'No Title',
+                  '₹${request['amount'].toString()}',
+                  request['date'] ?? 'No Date',
+                  request['status'] == 'Pending',
+                  screenWidth,
+                );
+              }).toList()
+            : [Text("No maintenance requests found.")],
       ),
     );
   }

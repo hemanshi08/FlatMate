@@ -34,6 +34,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
       // Fetch the data from your service/database
       final requests = await DatabaseService()
           .getMaintenanceRequests(); // Replace with your actual service
+      print('Fetched requests: $requests'); // Log the fetched requests
       setState(() {
         maintenanceRequests = requests; // Assign fetched data to the list
       });
@@ -122,22 +123,19 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
             // Maintenance History List
             Expanded(
               child: maintenanceRequests.isEmpty
-                  ? Center(
-                      child:
-                          CircularProgressIndicator()) // Show loader while data is being fetched
+                  ? Center(child: CircularProgressIndicator())
                   : ListView.builder(
-                      itemCount: maintenanceRequests.length,
+                      itemCount: maintenanceRequests
+                          .length, // Make sure this is updated
                       itemBuilder: (context, index) {
                         final request = maintenanceRequests[index];
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              request['date'] ??
-                                  'Unknown ', // Display the month dynamically
+                              request['date'] ?? 'Unknown',
                               style: TextStyle(
-                                fontSize:
-                                    screenWidth * 0.045, // Responsive font size
+                                fontSize: screenWidth * 0.045,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -146,14 +144,10 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                               screenWidth,
                               screenHeight,
                               textScaleFactor,
-                              request['title'] ?? 'No Title', // Dynamic title
-                              '₹${request['amount']}', // Dynamic amount
-                              request['date'] ?? 'No Date', // Dynamic date
-                              request['isPayable'] ??
-                                  false, // Dynamic payable status
-                              (request['users'] as Map<String, dynamic>)
-                                  .keys
-                                  .toList(), // Pass user IDs as a list
+                              request['title'] ?? 'No Title',
+                              '₹${request['amount']}',
+                              request['isPayable'] ?? false,
+                              request['users'] ?? {},
                             ),
                             SizedBox(height: screenHeight * 0.02),
                           ],
@@ -366,17 +360,18 @@ Widget maintenanceCard(
   double textScaleFactor,
   String title,
   String fee,
-  String date,
   bool isPayable,
-  List<String> users, // List of user IDs
+  Map<String, dynamic> users, // Map of user details (flatNo, ownerName)
 ) {
-  // Determine if the request was sent to all members or specific users
+  // Display user details (flatNo and ownerName)
   String recipientInfo;
   if (users.length > 1) {
     recipientInfo = 'Request sent to all members';
   } else {
-    recipientInfo =
-        'Request sent to: ${users.isNotEmpty ? users[0] : 'Unknown User'}'; // Assuming you fetch and display the user name by ID
+    final user = users.isNotEmpty ? users.values.first : null;
+    recipientInfo = user != null
+        ? 'Flat: ${user['flatNo']}, Owner: ${user['ownerName']}'
+        : 'Unknown User'; // Display user details
   }
 
   return Card(
@@ -422,16 +417,9 @@ Widget maintenanceCard(
                     letterSpacing: 0.2,
                   ),
                 ),
-                Text(
-                  date,
-                  style: TextStyle(
-                    fontSize: screenWidth * 0.04, // Responsive font size
-                    color: Colors.grey,
-                  ),
-                ),
                 SizedBox(height: screenHeight * 0.01),
                 Text(
-                  recipientInfo, // Display whether request was sent to all or specific users
+                  recipientInfo, // Display flatNo and ownerName
                   style: TextStyle(
                     fontSize: screenWidth * 0.04, // Responsive font size
                     color: Colors.grey,

@@ -393,41 +393,58 @@ class DatabaseService {
 
   // Define the method to fetch maintenance requests
   Future<List<Map<String, dynamic>>> getMaintenanceRequests() async {
-    List<Map<String, dynamic>> maintenanceRequests = [];
+  List<Map<String, dynamic>> maintenanceRequests = [];
 
-    try {
-      DataSnapshot snapshot = await _maintenanceRequestsRef.get();
+  try {
+    DataSnapshot snapshot = await _maintenanceRequestsRef.get();
 
-      if (snapshot.exists) {
-        snapshot.children.forEach((child) {
-          Map<String, dynamic> requestData =
-              Map<String, dynamic>.from(child.value as Map);
+    if (snapshot.exists) {
+      snapshot.children.forEach((child) async {
+        Map<String, dynamic> requestData =
+            Map<String, dynamic>.from(child.value as Map);
 
-          // Use null-aware operators to safely fetch values or provide defaults
-          String title = requestData['title'] ?? 'No Title'; // Fallback title
-          String date = requestData['date'] ?? 'Unknown Date';
-          int amount = requestData['amount'] ?? 0; // Ensure it's an integer
-          String status = requestData['status'] ?? 'Pending';
+        // Use null-aware operators to safely fetch values or provide defaults
+        String title = requestData['title'] ?? 'No Title'; // Fallback title
+        int amount = requestData['amount'] ?? 0; // Ensure it's an integer
+        String status = requestData['status'] ?? 'Pending';
 
-          // Fetch the users and their payment status
-          Map<String, dynamic> usersData =
-              Map<String, dynamic>.from(requestData['users'] ?? {});
+        // Fetch the users and their payment status
+        Map<String, dynamic> usersData =
+            Map<String, dynamic>.from(requestData['users'] ?? {});
 
-          requestData['title'] = title;
-          requestData['date'] = date;
-          requestData['amount'] = amount;
-          requestData['status'] = status;
-          requestData['users'] = usersData;
+        // Fetch resident details (flatNo and ownerName) for each user
+        Map<String, dynamic> userDetails = {};
+        for (String userId in usersData.keys) {
+          DataSnapshot residentSnapshot = await _residentsRef.child(userId).get();
 
-          maintenanceRequests.add(requestData);
-        });
-      }
-    } catch (e) {
-      print("Error fetching maintenance requests: $e");
+          if (residentSnapshot.exists) {
+            Map<String, dynamic> residentData =
+                Map<String, dynamic>.from(residentSnapshot.value as Map);
+            userDetails[userId] = {
+              'flatNo': residentData['flatNo'] ?? 'Unknown Flat No',
+              'ownerName': residentData['ownerName'] ?? 'Unknown Owner',
+            };
+          } else {
+            userDetails[userId] = {
+              'flatNo': 'Unknown Flat No',
+              'ownerName': 'Unknown Owner',
+            };
+          }
+        }
+
+        requestData['title'] = title;
+        requestData['amount'] = amount;
+        requestData['status'] = status;
+        requestData['users'] = userDetails; // Replace user IDs with details
+
+        maintenanceRequests.add(requestData);
+      });
     }
-
-    return maintenanceRequests;
+  } catch (e) {
+    print("Error fetching maintenance requests: $e");
   }
 
+  return maintenanceRequests;
+}
   
 }
