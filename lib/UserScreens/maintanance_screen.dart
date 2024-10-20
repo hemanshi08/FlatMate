@@ -2,12 +2,14 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flatmate/UserScreens/complain_first.dart';
 import 'package:flatmate/UserScreens/payment_screen.dart';
 import 'package:flatmate/UserScreens/expense_list.dart';
+import 'package:flatmate/data/database_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flatmate/UserScreens/user_dashboard.dart';
 import 'package:flatmate/drawer/contact_details.dart';
 import 'package:flatmate/drawer/language.dart';
 import 'package:flatmate/drawer/profile.dart';
 import 'package:flatmate/drawer/security_details.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MaintenancePage extends StatefulWidget {
   const MaintenancePage({super.key});
@@ -30,22 +32,61 @@ class _MaintenancePageState extends State<MaintenancePage> {
     _fetchMaintenanceRequests();
   }
 
+// Save user_id in SharedPreferences
+  Future<void> _saveUserId(String userId) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_id', userId);
+  }
+
   // Fetch Maintenance Requests from Firebase
   Future<void> _fetchMaintenanceRequests() async {
     try {
-      DataSnapshot snapshot = await _maintenanceRequestsRef.get();
+      // Load user_id from SharedPreferences
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? currentUserId = prefs.getString('user_id');
 
-      if (snapshot.exists) {
-        List<Map<String, dynamic>> fetchedRequests = [];
-        snapshot.children.forEach((request) {
-          Map<String, dynamic> requestData =
-              Map<String, dynamic>.from(request.value as Map);
-          fetchedRequests.add(requestData);
-        });
+      if (currentUserId != null) {
+        // Fetch data from Firebase
+        final DatabaseReference ref =
+            FirebaseDatabase.instance.ref().child('maintenance_requests');
+        final DataSnapshot snapshot = await ref.get();
 
-        setState(() {
-          _maintenanceRequests = fetchedRequests;
-        });
+        // Check if data exists
+        if (snapshot.exists) {
+          final data = snapshot.value as Map<dynamic, dynamic>;
+
+          // Convert the data to a List<Map<String, dynamic>>
+          final requests = data.entries.map((entry) {
+            final requestKey = entry.key; // Key for the request
+            final requestValue = Map<String, dynamic>.from(entry.value
+                as Map); // Convert each entry's value to Map<String, dynamic>
+            return requestValue;
+          }).toList();
+
+          // Log fetched requests before filtering
+          print("Fetched requests: $requests");
+
+          // Filter requests by the current user ID
+          final filteredRequests = requests.where((request) {
+            final users = request['users'] as Map<dynamic, dynamic>? ?? {};
+            return users.containsKey(currentUserId);
+          }).toList();
+
+          // Log filtered requests
+          print("Filtered requests for user $currentUserId: $filteredRequests");
+
+          // Update state with filtered requests
+          setState(() {
+            _maintenanceRequests = filteredRequests;
+          });
+        } else {
+          print('No maintenance requests found.');
+          setState(() {
+            _maintenanceRequests = [];
+          });
+        }
+      } else {
+        print('No user ID found in SharedPreferences.');
       }
     } catch (e) {
       print('Error fetching maintenance requests: $e');
