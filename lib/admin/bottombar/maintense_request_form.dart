@@ -78,7 +78,6 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
         'title': _title,
         'date': _date,
         'amount': double.tryParse(_amount ?? '0'), // Convert amount to double
-        'status': 'Pending',
         'users': <String, bool>{}, // Using bool for the users map
         'payments': <String, Map<String, dynamic>>{}, // New payments field
       };
@@ -96,9 +95,10 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
             // Initialize payment details for the user
             (requestData['payments']
                 as Map<String, Map<String, dynamic>>)[userId] = {
+              'payment_id': " ",
               'payment_status': 'Pending', // Default payment status
-              'transaction_id': null,
-              'payment_timestamp': null,
+              'transaction_id': " ",
+              'payment_timestamp': " ",
               'payment_method':
                   'Razorpay', // Or any payment method you plan to use
             };

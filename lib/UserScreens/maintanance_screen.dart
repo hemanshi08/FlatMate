@@ -23,6 +23,10 @@ class _MaintenancePageState extends State<MaintenancePage> {
   int _selectedIndex = 0;
   final DatabaseReference _maintenanceRequestsRef =
       FirebaseDatabase.instance.ref().child('maintenance_requests');
+
+  final DatabaseReference _residentsRef = FirebaseDatabase.instance
+      .ref()
+      .child('residents'); // Reference to residents table
   List<Map<String, dynamic>> _maintenanceRequests = [];
 
   bool _isLoading = true; // Add loading state
@@ -39,40 +43,67 @@ class _MaintenancePageState extends State<MaintenancePage> {
     await prefs.setString('user_id', userId);
   }
 
-  // Fetch Maintenance Requests from Firebase
   Future<void> _fetchMaintenanceRequests() async {
     try {
-      // Load user_id from SharedPreferences
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? currentUserId = prefs.getString('user_id');
 
       if (currentUserId != null) {
-        // Fetch data from Firebase
         final DataSnapshot snapshot = await _maintenanceRequestsRef.get();
 
-        // Check if data exists
         if (snapshot.exists) {
           final data = snapshot.value as Map<dynamic, dynamic>;
 
-          // Convert the data to a List<Map<String, dynamic>>
+          // Convert the data from Firebase to a list of requests
           final requests = data.entries.map((entry) {
             final requestValue = Map<String, dynamic>.from(entry.value as Map);
+            requestValue['requestId'] = entry.key; // Add the requestId
             return requestValue;
           }).toList();
 
-          // Log fetched requests before filtering
-          print("Fetched requests: $requests");
-
-          // Filter requests by the current user ID
+          // Filter requests based on the current user ID
           final filteredRequests = requests.where((request) {
             final users = request['users'] as Map<dynamic, dynamic>? ?? {};
-            return users.containsKey(currentUserId);
+            return users.containsKey(
+                currentUserId); // Check if user is part of the request
           }).toList();
 
-          // Log filtered requests
-          print("Filtered requests for user $currentUserId: $filteredRequests");
+          // Fetch owner details for each request
+          for (var request in filteredRequests) {
+            // Fetch owner information from the 'residents' table using the currentUserId
+            final residentSnapshot =
+                await _residentsRef.child(currentUserId).get();
 
-          // Update state with filtered requests
+            if (residentSnapshot.exists) {
+              final ownerData =
+                  residentSnapshot.value as Map<dynamic, dynamic>? ?? {};
+
+              // Add ownerName and flatNo to each request
+              request['ownerName'] = ownerData['ownerName'] ?? 'Unknown Owner';
+              request['flatNo'] = ownerData['flatNo'] ?? 'Unknown Flat';
+            } else {
+              request['ownerName'] = 'Unknown Owner';
+              request['flatNo'] = 'Unknown Flat';
+            }
+
+            var payments = request['payments'] as Map<dynamic, dynamic>? ?? {};
+
+            // Assume that the current user hasn't paid by default
+            request['isPayable'] = true;
+            request['canDownloadReceipt'] = false;
+
+            // Check if the current user has made a payment
+            if (payments.containsKey(currentUserId)) {
+              var userPayment = payments[currentUserId];
+              if (userPayment['payment_status'] == 'Paid') {
+                request['isPayable'] =
+                    false; // User has already paid, so no need to pay again
+                request['canDownloadReceipt'] =
+                    true; // User can download the receipt
+              }
+            }
+          }
+
           setState(() {
             _maintenanceRequests = filteredRequests;
           });
@@ -199,19 +230,20 @@ class _MaintenancePageState extends State<MaintenancePage> {
 
   Widget _buildMaintenanceList(double screenWidth) {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(
-        16,
-      ),
+      padding: EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: _maintenanceRequests.isNotEmpty
             ? _maintenanceRequests.map((request) {
                 return _buildMonthSection(
                   request['title'] ?? 'No Title',
-                  '₹${request['amount'].toString()}',
+                  double.tryParse(request['amount'].toString()) ?? 0.0,
                   request['date'] ?? 'No Date',
-                  request['status'] == 'Pending',
+                  request['isPayable'], // Pass the isPayable value
                   screenWidth,
+                  request['requestId'] ?? '',
+                  request['flatNo'] ?? '',
+                  request['ownerName'] ?? '',
                 );
               }).toList()
             : [Text("No maintenance requests found.")],
@@ -352,8 +384,19 @@ class _MaintenancePageState extends State<MaintenancePage> {
     );
   }
 
-  Widget _buildMonthSection(String month, String amount, String date,
-      bool isPayable, double screenWidth) {
+  Widget _buildMonthSection(
+    String month,
+    double amount,
+    String date,
+    bool isPayable,
+    double screenWidth,
+    String requestId,
+    String flatNo,
+    String ownerName,
+  ) {
+    // Format the amount for display
+    final formattedAmount = '₹${amount.toStringAsFixed(2)}';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -395,7 +438,7 @@ class _MaintenancePageState extends State<MaintenancePage> {
                             fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        amount,
+                        formattedAmount,
                         style: TextStyle(
                             fontSize: screenWidth * 0.039,
                             fontWeight: FontWeight.bold),
@@ -410,20 +453,27 @@ class _MaintenancePageState extends State<MaintenancePage> {
                 if (isPayable)
                   ElevatedButton(
                     onPressed: () {
-                      print(
-                          "Pay button clicked"); // Add this line for debugging
+                      // Print the requestId for debugging
+                      print("Pay button clicked for request ID: $requestId");
+
+                      // Navigate to the PaymentScreen with the request details
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => PaymentScreen(),
+                          builder: (context) => PaymentScreen(
+                            requestId: requestId,
+                            title: month,
+                            amount: amount,
+                            flatNo: flatNo,
+                            ownerName: ownerName,
+                          ),
                         ),
                       );
                     },
                     style: ElevatedButton.styleFrom(
                       padding: EdgeInsets.symmetric(
-                        horizontal:
-                            screenWidth * 0.04, // Button width responsive
-                        vertical: 8, // Button height
+                        horizontal: screenWidth * 0.04,
+                        vertical: 8,
                       ),
                       backgroundColor: const Color(0xFFD8AFCC),
                       shape: RoundedRectangleBorder(
@@ -445,9 +495,8 @@ class _MaintenancePageState extends State<MaintenancePage> {
                     },
                     style: TextButton.styleFrom(
                       padding: EdgeInsets.symmetric(
-                        horizontal:
-                            screenWidth * 0.04, // Button width responsive
-                        vertical: 8, // Button height
+                        horizontal: screenWidth * 0.04,
+                        vertical: 8,
                       ),
                       backgroundColor: Colors.blue[100],
                       shape: RoundedRectangleBorder(
