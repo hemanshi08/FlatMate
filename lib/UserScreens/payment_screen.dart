@@ -67,7 +67,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     // Update payment details in Firebase
     _updatePaymentDetails(
       paymentId: response.paymentId ?? '',
-      transactionId: response.orderId ??
+      transactionId: response.paymentId ??
           '', // Can also be response.signature if using signature validation
       paymentTimestamp: DateFormat('dd MMM yyyy HH:mm').format(DateTime.now()),
     );
@@ -78,7 +78,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       MaterialPageRoute(
         builder: (context) => PaymentSuccessPage(
           paymentId: response.paymentId ?? '',
-          transactionId: response.orderId ?? '',
+          transactionId: response.paymentId ?? '',
         ),
       ),
     );

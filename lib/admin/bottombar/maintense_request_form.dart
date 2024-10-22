@@ -99,6 +99,7 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
               'payment_status': 'Pending', // Default payment status
               'transaction_id': " ",
               'payment_timestamp': " ",
+              'receipt_url': " ",
               'payment_method':
                   'Razorpay', // Or any payment method you plan to use
             };

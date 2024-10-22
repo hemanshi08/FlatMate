@@ -52,7 +52,19 @@ class PaymentSuccessPage extends StatelessWidget {
                 "Thank you for your payment.",
                 style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               ),
+              SizedBox(height: 20),
+              // Display Payment ID and Transaction ID
+              Text(
+                "Payment ID: $paymentId",
+                style: TextStyle(fontSize: 16, color: Colors.black),
+              ),
               SizedBox(height: 10),
+              Text(
+                "Transaction ID: $transactionId",
+                style: TextStyle(fontSize: 16, color: Colors.black),
+              ),
+              SizedBox(height: 30),
+              // "FlatMate" branding text
               Text(
                 "FlatMate",
                 style: TextStyle(fontSize: 25, fontWeight: FontWeight.w600),
