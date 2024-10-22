@@ -1,6 +1,7 @@
 import 'package:flatmate/admin/admin_dashboard.dart';
 import 'package:flatmate/admin/bottombar/admin_complain.dart';
 import 'package:flatmate/admin/bottombar/admin_expense.dart';
+import 'package:flatmate/data/database_service.dart';
 import 'package:flatmate/drawer/contact_details.dart';
 import 'package:flatmate/drawer/language.dart';
 import 'package:flatmate/drawer/profile.dart';
@@ -18,6 +19,38 @@ class MaintenanceScreen extends StatefulWidget {
 class _MaintenanceScreenState extends State<MaintenanceScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedIndex = 0;
+
+  // Replace this with your actual database service to fetch maintenance requests
+  List<Map<String, dynamic>> maintenanceRequests = [];
+  bool _isLoading = false; // Track loading state
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchMaintenanceRequests(); // Fetch maintenance data when screen loads
+  }
+
+  // Function to fetch maintenance requests from the database
+  Future<void> _fetchMaintenanceRequests() async {
+    setState(() {
+      _isLoading = true; // Start loading
+    });
+    try {
+      final requests = await DatabaseService()
+          .getMaintenanceRequests(); // Fetch data from your service/database
+      print(
+          'Fetched requests: $requests'); // Log fetched requests for debugging
+      setState(() {
+        maintenanceRequests = requests; // Assign fetched data to the list
+      });
+    } catch (e) {
+      print('Error fetching maintenance requests: $e');
+    } finally {
+      setState(() {
+        _isLoading = false; // End loading
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +74,6 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
         backgroundColor: const Color(0xFF06001A),
         toolbarHeight: 60.0,
         actions: [
-
           IconButton(
             icon: Icon(Icons.menu, color: Colors.white),
             iconSize: screenWidth * 0.095,
@@ -49,12 +81,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
               _scaffoldKey.currentState
                   ?.openEndDrawer(); // Open right-side drawer
             },
-
-         
-
-           ),
+          ),
         ],
-        // automaticallyImplyLeading: false, // Disable the back arrow
       ),
       endDrawer: _buildDrawer(screenWidth, screenHeight), // Right-side drawer
 
@@ -87,8 +115,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
 
                   if (result != null) {
                     // Handle the returned values (title, date, amount)
-                    print(
-                        result); // You can update the screen with these values
+                    _fetchMaintenanceRequests(); // Refresh the list after making a request
                   }
                 },
                 child: Text(
@@ -104,48 +131,40 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
 
             // Maintenance History List
             Expanded(
-              child: ListView(
-                children: [
-                  // July, 2024 Section
-                  Text(
-                    "July, 2024",
-                    style: TextStyle(
-                      fontSize: screenWidth * 0.045, // Responsive font size
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: screenHeight * 0.01),
-                  maintenanceCard(
-                    screenWidth,
-                    screenHeight,
-                    textScaleFactor,
-                    'Maintenance Fees',
-                    '₹1000',
-                    '5 July, 2024',
-                    true, // Payable status
-                  ),
-                  SizedBox(height: screenHeight * 0.02),
-
-                  // June, 2024 Section
-                  Text(
-                    "June, 2024",
-                    style: TextStyle(
-                      fontSize: screenWidth * 0.045, // Responsive font size
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: screenHeight * 0.01),
-                  maintenanceCard(
-                    screenWidth,
-                    screenHeight,
-                    textScaleFactor,
-                    'Maintenance Fees',
-                    '₹1000',
-                    '5 June, 2024',
-                    false, // Not payable
-                  ),
-                ],
-              ),
+              child: _isLoading
+                  ? Center(child: CircularProgressIndicator()) // Show loading
+                  : maintenanceRequests.isEmpty
+                      ? Center(child: CircularProgressIndicator())
+                      : ListView.builder(
+                          itemCount: maintenanceRequests
+                              .length, // Make sure this is updated
+                          itemBuilder: (context, index) {
+                            final request = maintenanceRequests[index];
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  request['date'] ?? 'Unknown',
+                                  style: TextStyle(
+                                    fontSize: screenWidth * 0.045,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: screenHeight * 0.01),
+                                maintenanceCard(
+                                  screenWidth,
+                                  screenHeight,
+                                  textScaleFactor,
+                                  request['title'] ?? 'No Title',
+                                  '₹${request['amount']}',
+                                  request['isPayable'] ?? false,
+                                  request['users'] ?? {},
+                                ),
+                                SizedBox(height: screenHeight * 0.02),
+                              ],
+                            );
+                          },
+                        ),
             ),
           ],
         ),
@@ -167,7 +186,6 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
               break;
             case 1:
               // Navigate to Maintenance page when Maintenance tab is tapped
-
               break;
             case 2:
               Navigator.pushReplacement(
@@ -346,16 +364,27 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
   }
 }
 
-// Maintenance card widget
+// Maintenance card widget remains unchanged
 Widget maintenanceCard(
   double screenWidth,
   double screenHeight,
   double textScaleFactor,
   String title,
   String fee,
-  String date,
   bool isPayable,
+  Map<String, dynamic> users, // Map of user details (flatNo, ownerName)
 ) {
+  // Display user details (flatNo and ownerName)
+  String recipientInfo;
+  if (users.length > 1) {
+    recipientInfo = 'Request sent to all members';
+  } else {
+    final user = users.isNotEmpty ? users.values.first : null;
+    recipientInfo = user != null
+        ? 'Flat: ${user['flatNo']}, Owner: ${user['ownerName']}'
+        : 'Unknown User'; // Display user details
+  }
+
   return Card(
     elevation: 2,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -399,8 +428,9 @@ Widget maintenanceCard(
                     letterSpacing: 0.2,
                   ),
                 ),
+                SizedBox(height: screenHeight * 0.01),
                 Text(
-                  date,
+                  recipientInfo, // Display flatNo and ownerName
                   style: TextStyle(
                     fontSize: screenWidth * 0.04, // Responsive font size
                     color: Colors.grey,

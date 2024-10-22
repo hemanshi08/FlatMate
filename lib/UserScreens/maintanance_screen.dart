@@ -1,12 +1,21 @@
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flatmate/UserScreens/complain_first.dart';
 import 'package:flatmate/UserScreens/payment_screen.dart';
 import 'package:flatmate/UserScreens/expense_list.dart';
+import 'package:flatmate/data/database_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flatmate/UserScreens/user_dashboard.dart';
 import 'package:flatmate/drawer/contact_details.dart';
 import 'package:flatmate/drawer/language.dart';
 import 'package:flatmate/drawer/profile.dart';
 import 'package:flatmate/drawer/security_details.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import 'package:pdf/pdf.dart';
 
 class MaintenancePage extends StatefulWidget {
   const MaintenancePage({super.key});
@@ -18,6 +27,184 @@ class MaintenancePage extends StatefulWidget {
 class _MaintenancePageState extends State<MaintenancePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedIndex = 0;
+  final DatabaseReference _maintenanceRequestsRef =
+      FirebaseDatabase.instance.ref().child('maintenance_requests');
+
+  final DatabaseReference _residentsRef = FirebaseDatabase.instance
+      .ref()
+      .child('residents'); // Reference to residents table
+  List<Map<String, dynamic>> _maintenanceRequests = [];
+
+  bool _isLoading = true; // Add loading state
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchMaintenanceRequests();
+  }
+
+// Save user_id in SharedPreferences
+  Future<void> _saveUserId(String userId) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_id', userId);
+  }
+
+  Future<void> _fetchMaintenanceRequests() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? currentUserId = prefs.getString('user_id');
+
+      if (currentUserId != null) {
+        final DataSnapshot snapshot = await _maintenanceRequestsRef.get();
+
+        if (snapshot.exists) {
+          final data = snapshot.value as Map<dynamic, dynamic>;
+
+          // Convert the data from Firebase to a list of requests
+          final requests = data.entries.map((entry) {
+            final requestValue = Map<String, dynamic>.from(entry.value as Map);
+            requestValue['requestId'] = entry.key; // Add the requestId
+            return requestValue;
+          }).toList();
+
+          // Filter requests based on the current user ID
+          final filteredRequests = requests.where((request) {
+            final users = request['users'] as Map<dynamic, dynamic>? ?? {};
+            return users.containsKey(
+                currentUserId); // Check if user is part of the request
+          }).toList();
+
+          // Fetch owner details for each request
+          for (var request in filteredRequests) {
+            // Fetch owner information from the 'residents' table using the currentUserId
+            final residentSnapshot =
+                await _residentsRef.child(currentUserId).get();
+
+            if (residentSnapshot.exists) {
+              final ownerData =
+                  residentSnapshot.value as Map<dynamic, dynamic>? ?? {};
+
+              // Add ownerName and flatNo to each request
+              request['ownerName'] = ownerData['ownerName'] ?? 'Unknown Owner';
+              request['flatNo'] = ownerData['flatNo'] ?? 'Unknown Flat';
+            } else {
+              request['ownerName'] = 'Unknown Owner';
+              request['flatNo'] = 'Unknown Flat';
+            }
+
+            var payments = request['payments'] as Map<dynamic, dynamic>? ?? {};
+
+            // Assume that the current user hasn't paid by default
+            request['isPayable'] = true;
+            request['canDownloadReceipt'] = false;
+
+            // Check if the current user has made a payment
+            if (payments.containsKey(currentUserId)) {
+              var userPayment = payments[currentUserId];
+              if (userPayment['payment_status'] == 'Paid') {
+                request['isPayable'] =
+                    false; // User has already paid, so no need to pay again
+                request['canDownloadReceipt'] =
+                    true; // User can download the receipt
+              }
+            }
+          }
+
+          setState(() {
+            _maintenanceRequests = filteredRequests;
+          });
+        } else {
+          print('No maintenance requests found.');
+          setState(() {
+            _maintenanceRequests = [];
+          });
+        }
+      } else {
+        print('No user ID found in SharedPreferences.');
+      }
+    } catch (e) {
+      print('Error fetching maintenance requests: $e');
+    } finally {
+      setState(() {
+        _isLoading = false; // Set loading to false once data fetch is complete
+      });
+    }
+  }
+
+  Future<void> _downloadReceipt({
+    required BuildContext context, // Add BuildContext as a required parameter
+    required String requestId,
+    required String flatNo,
+    required String ownerName,
+    required double amount,
+    required String paymentMethod,
+    required String paymentId,
+    required String transactionId,
+    required String paymentDate,
+    required String title,
+  }) async {
+    try {
+      // Create a PDF document
+      final pdf = pw.Document();
+
+      pdf.addPage(
+        pw.Page(
+          build: (pw.Context context) {
+            return pw.Center(
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text("Payment Receipt", style: pw.TextStyle(fontSize: 24)),
+                  pw.SizedBox(height: 20),
+                  pw.Text("Owner Name: $ownerName"),
+                  pw.Text("Flat No: $flatNo"),
+                  pw.Text("Title: $title"),
+                  pw.Text("Amount Paid: ₹$amount"),
+                  pw.Text("Payment Method: $paymentMethod"),
+                  pw.Text("Payment ID: $paymentId"),
+                  pw.Text("Transaction ID: $transactionId"),
+                  pw.Text("Payment Date: $paymentDate"),
+                  pw.Text("Request ID: $requestId"),
+                ],
+              ),
+            );
+          },
+        ),
+      );
+
+      // Save the PDF file
+      if (await Permission.storage.request().isGranted) {
+        final directory = await getApplicationDocumentsDirectory();
+        final file = File('${directory.path}/receipt_$requestId.pdf');
+        await file.writeAsBytes(await pdf.save());
+
+        // Upload PDF to Firebase Storage
+        final storageRef =
+            FirebaseStorage.instance.ref().child('receipts/$requestId.pdf');
+        await storageRef.putFile(file);
+
+        // Get the download URL
+        final receiptUrl = await storageRef.getDownloadURL();
+
+        // Save receipt URL to Firebase Database
+        await FirebaseDatabase.instance
+            .ref()
+            .child('maintenance_requests/$requestId/payments/$paymentId')
+            .update({
+          'receipt_url': receiptUrl,
+        });
+
+        // Notify user that the receipt has been saved
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Receipt saved and available for download!')),
+        );
+      } else {
+        print('Storage permission denied');
+      }
+    } catch (e) {
+      print('Error downloading receipt: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,23 +238,10 @@ class _MaintenancePageState extends State<MaintenancePage> {
         ],
       ),
       endDrawer: _buildDrawer(screenWidth), // Right-side drawer
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator()) // Show loading indicator
+          : _buildMaintenanceList(screenWidth),
 
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildMonthSection(
-                "August, 2024", "₹1000", "5 Aug, 2024", true, screenWidth),
-            SizedBox(height: 16),
-            _buildMonthSection(
-                "July, 2024", "₹1000", "5 July, 2024", false, screenWidth),
-            SizedBox(height: 16),
-            _buildMonthSection(
-                "June, 2024", "₹1000", "5 June, 2024", false, screenWidth),
-          ],
-        ),
-      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 1,
         onTap: (index) {
@@ -131,6 +305,29 @@ class _MaintenancePageState extends State<MaintenancePage> {
         iconSize: 30,
         elevation: 10,
         showUnselectedLabels: true,
+      ),
+    );
+  }
+
+  Widget _buildMaintenanceList(double screenWidth) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: _maintenanceRequests.isNotEmpty
+            ? _maintenanceRequests.map((request) {
+                return _buildMonthSection(
+                  request['title'] ?? 'No Title',
+                  double.tryParse(request['amount'].toString()) ?? 0.0,
+                  request['date'] ?? 'No Date',
+                  request['isPayable'], // Pass the isPayable value
+                  screenWidth,
+                  request['requestId'] ?? '',
+                  request['flatNo'] ?? '',
+                  request['ownerName'] ?? '',
+                );
+              }).toList()
+            : [Text("No maintenance requests found.")],
       ),
     );
   }
@@ -268,8 +465,19 @@ class _MaintenancePageState extends State<MaintenancePage> {
     );
   }
 
-  Widget _buildMonthSection(String month, String amount, String date,
-      bool isPayable, double screenWidth) {
+  Widget _buildMonthSection(
+    String month,
+    double amount,
+    String date,
+    bool isPayable,
+    double screenWidth,
+    String requestId,
+    String flatNo,
+    String ownerName,
+  ) {
+    // Format the amount for display
+    final formattedAmount = '₹${amount.toStringAsFixed(2)}';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -311,7 +519,7 @@ class _MaintenancePageState extends State<MaintenancePage> {
                             fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        amount,
+                        formattedAmount,
                         style: TextStyle(
                             fontSize: screenWidth * 0.039,
                             fontWeight: FontWeight.bold),
@@ -326,20 +534,27 @@ class _MaintenancePageState extends State<MaintenancePage> {
                 if (isPayable)
                   ElevatedButton(
                     onPressed: () {
-                      print(
-                          "Pay button clicked"); // Add this line for debugging
+                      // Print the requestId for debugging
+                      print("Pay button clicked for request ID: $requestId");
+
+                      // Navigate to the PaymentScreen with the request details
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => PaymentScreen(),
+                          builder: (context) => PaymentScreen(
+                            requestId: requestId,
+                            title: month,
+                            amount: amount,
+                            flatNo: flatNo,
+                            ownerName: ownerName,
+                          ),
                         ),
                       );
                     },
                     style: ElevatedButton.styleFrom(
                       padding: EdgeInsets.symmetric(
-                        horizontal:
-                            screenWidth * 0.04, // Button width responsive
-                        vertical: 8, // Button height
+                        horizontal: screenWidth * 0.04,
+                        vertical: 8,
                       ),
                       backgroundColor: const Color(0xFFD8AFCC),
                       shape: RoundedRectangleBorder(
@@ -359,11 +574,11 @@ class _MaintenancePageState extends State<MaintenancePage> {
                     onPressed: () {
                       // Add your download logic here
                     },
+                    // child: Text("Download Receipt"),
                     style: TextButton.styleFrom(
                       padding: EdgeInsets.symmetric(
-                        horizontal:
-                            screenWidth * 0.04, // Button width responsive
-                        vertical: 8, // Button height
+                        horizontal: screenWidth * 0.04,
+                        vertical: 8,
                       ),
                       backgroundColor: Colors.blue[100],
                       shape: RoundedRectangleBorder(

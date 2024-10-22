@@ -12,6 +12,7 @@ class DatabaseService {
 
   final DatabaseReference _adminRef =
       FirebaseDatabase.instance.ref().child('admin');
+
   final DatabaseReference _residentsRef =
       FirebaseDatabase.instance.ref().child('residents');
 
@@ -58,6 +59,10 @@ class DatabaseService {
       return null; // Return null in case of any error
     }
   }
+
+  final DatabaseReference _maintenanceRequestsRef =
+      FirebaseDatabase.instance.ref().child('maintenance_requests');
+
 
   // Function to validate admin credentials
   Future<Map<String, dynamic>?> getAdminCredentials(String username) async {
@@ -421,4 +426,57 @@ class DatabaseService {
 
     return complaintsList;
   }
+
+
+  // Define the method to fetch maintenance requests
+  Future<List<Map<String, dynamic>>> getMaintenanceRequests() async {
+    List<Map<String, dynamic>> maintenanceRequests = [];
+
+    try {
+      DataSnapshot snapshot = await _maintenanceRequestsRef.get();
+
+      if (snapshot.exists) {
+        for (var child in snapshot.children) {
+          // Use a for loop
+          Map<String, dynamic> requestData =
+              Map<String, dynamic>.from(child.value as Map);
+
+          // Fetch the users and their payment status
+          Map<String, dynamic> usersData =
+              Map<String, dynamic>.from(requestData['users'] ?? {});
+
+          // Fetch resident details (flatNo and ownerName) for each user
+          Map<String, dynamic> userDetails = {};
+          for (String userId in usersData.keys) {
+            DataSnapshot residentSnapshot =
+                await _residentsRef.child(userId).get();
+
+            if (residentSnapshot.exists) {
+              Map<String, dynamic> residentData =
+                  Map<String, dynamic>.from(residentSnapshot.value as Map);
+              userDetails[userId] = {
+                'flatNo': residentData['flatNo'] ?? 'Unknown Flat No',
+                'ownerName': residentData['ownerName'] ?? 'Unknown Owner',
+              };
+            } else {
+              userDetails[userId] = {
+                'flatNo': 'Unknown Flat No',
+                'ownerName': 'Unknown Owner',
+              };
+            }
+          }
+
+          requestData['users'] = userDetails; // Replace user IDs with details
+          maintenanceRequests.add(requestData);
+        }
+      } else {
+        print('No data available.');
+      }
+    } catch (e) {
+      print("Error fetching maintenance requests: $e");
+    }
+
+    return maintenanceRequests;
+  }
+
 }

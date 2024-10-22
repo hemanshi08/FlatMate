@@ -131,7 +131,7 @@ class _HomePageState extends State<HomePage> {
                     _buildGridItem(Icons.article, 'Rules & Regulation', context,
                         RulesPage()),
                     _buildGridItem(Icons.notifications_active, 'Announcement',
-                        context,AnnouncementDetailsPage()),
+                        context, AnnouncementDetailsPage()),
                     _buildGridItem(
                         Icons.people, 'Residents', context, ResidentsPage()),
                     _buildGridItem(

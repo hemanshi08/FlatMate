@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class MaintenanceRequestForm extends StatefulWidget {
   const MaintenanceRequestForm({super.key});
@@ -14,15 +15,140 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
   String? _amount;
   String? _selectedOption = 'All Members';
   String? _selectedMember;
+  List<Map<String, String?>> _members = []; // List to hold fetched members
+
+  final DatabaseReference _residentsRef =
+      FirebaseDatabase.instance.ref().child('residents');
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchMembers();
+  }
+
+  Future<void> _fetchMembers() async {
+    try {
+      DatabaseEvent event = await _residentsRef.once();
+      DataSnapshot snapshot = event.snapshot;
+
+      if (snapshot.exists && snapshot.value != null) {
+        Map<dynamic, dynamic>? userMap =
+            snapshot.value as Map<dynamic, dynamic>?;
+
+        if (userMap != null) {
+          setState(() {
+            _members = userMap.entries.where((entry) {
+              var user = entry.value;
+              return user != null &&
+                  user['ownerName'] != null &&
+                  user['flatNo'] != null &&
+                  user['user_id'] != null; // Ensure user_id exists
+            }).map((entry) {
+              var user = entry.value;
+              return {
+                'flatNo': user['flatNo']?.toString() ?? 'Unknown Flat',
+                'ownerName': user['ownerName']?.toString() ?? 'Unknown Owner',
+                'userId': user['user_id']?.toString() ??
+                    '', // Use user_id from residents
+              };
+            }).toList();
+          });
+
+          if (_members.isEmpty) {
+            print("No residents with valid data found in the database.");
+          }
+        }
+      } else {
+        print("No residents found.");
+      }
+    } catch (error) {
+      print("Error fetching residents: $error");
+    }
+  }
+
+  Future<void> _saveMaintenanceRequest() async {
+    final requestId = FirebaseDatabase.instance
+        .ref('maintenance_requests')
+        .push()
+        .key; // Generate a new request ID
+
+    if (requestId != null) {
+      // Explicitly declare the type of requestData
+      final Map<String, dynamic> requestData = {
+        'title': _title,
+        'date': _date,
+        'amount': double.tryParse(_amount ?? '0'), // Convert amount to double
+        'users': <String, bool>{}, // Using bool for the users map
+        'payments': <String, Map<String, dynamic>>{}, // New payments field
+      };
+
+      // Determine which users to include based on the selected option
+      if (_selectedOption == 'All Members') {
+        for (var member in _members) {
+          final userId = member['userId']; // Safely extract userId
+
+          if (userId != null && userId.isNotEmpty) {
+            // Add user to users map safely
+            (requestData['users'] as Map<String, bool>)[userId] =
+                true; // Add user to users map
+
+            // Initialize payment details for the user
+            (requestData['payments']
+                as Map<String, Map<String, dynamic>>)[userId] = {
+              'payment_id': " ",
+              'payment_status': 'Pending', // Default payment status
+              'transaction_id': " ",
+              'payment_timestamp': " ",
+              'receipt_url': " ",
+              'payment_method':
+                  'Razorpay', // Or any payment method you plan to use
+            };
+          } else {
+            print('User ID is null or empty for member: ${member['flatNo']}');
+          }
+        }
+      } else if (_selectedOption == 'Particular Member' &&
+          _selectedMember != null) {
+        final selectedUserId = _selectedMember?.split('_')[0]; // Extract userId
+
+        if (selectedUserId != null && selectedUserId.isNotEmpty) {
+          // Add user to users map safely
+          (requestData['users'] as Map<String, bool>)[selectedUserId] =
+              true; // Add user to users map
+
+          // Initialize payment details for the user
+          (requestData['payments']
+              as Map<String, Map<String, dynamic>>)[selectedUserId] = {
+            'payment_status': 'Pending', // Default payment status
+            'transaction_id': null,
+            'payment_timestamp': null,
+            'payment_method':
+                'Razorpay', // Or any payment method you plan to use
+          };
+        } else {
+          print('Selected user ID is null or empty');
+        }
+      }
+
+      // Push the maintenance request data to the database
+      await FirebaseDatabase.instance
+          .ref('maintenance_requests/$requestId')
+          .set(requestData);
+
+      // Optionally show a success message or handle UI updates
+      print('Maintenance request saved successfully with ID: $requestId');
+    }
+  }
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
+      _saveMaintenanceRequest(); // Save the request to the database
       Navigator.pop(context, {
         'title': _title,
         'date': _date,
         'amount': _amount,
-        'member': _selectedMember
+        'member': _selectedMember,
       });
     }
   }
@@ -31,28 +157,22 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
-        return ListView(
-          children: [
-            ListTile(
-              title: Text('Member 1'),
+        return ListView.builder(
+          itemCount: _members.length,
+          itemBuilder: (context, index) {
+            final member = _members[index];
+            return ListTile(
+              title: Text(
+                  'Flat No: ${member['flatNo']}, Owner: ${member['ownerName']}'),
               onTap: () {
                 setState(() {
-                  _selectedMember = 'Member 1';
+                  _selectedMember =
+                      '${member['userId']}_${member['flatNo']}_${member['ownerName']}';
                 });
                 Navigator.pop(context);
               },
-            ),
-            ListTile(
-              title: Text('Member 2'),
-              onTap: () {
-                setState(() {
-                  _selectedMember = 'Member 2';
-                });
-                Navigator.pop(context);
-              },
-            ),
-            // Add more ListTile widgets for additional members
-          ],
+            );
+          },
         );
       },
     );
@@ -75,7 +195,7 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               IconButton(
-                icon: Icon(Icons.arrow_back, color: Colors.white),
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
                 onPressed: () => Navigator.pop(context),
               ),
               SizedBox(height: screenHeight * 0.02),
@@ -90,7 +210,7 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
                   ),
                 ),
               ),
-              Spacer(),
+              const Spacer(),
             ],
           ),
         ),
@@ -102,7 +222,6 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Radio buttons for selecting All Members or Particular Member
               Row(
                 children: [
                   Radio<String>(
@@ -116,7 +235,7 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
                       });
                     },
                   ),
-                  Text('All Members'),
+                  const Text('All Members'),
                   Radio<String>(
                     value: 'Particular Member',
                     groupValue: _selectedOption,
@@ -129,7 +248,7 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
                       });
                     },
                   ),
-                  Text('Particular Member'),
+                  const Text('Particular Member'),
                 ],
               ),
               if (_selectedOption == 'Particular Member' &&
@@ -142,27 +261,24 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
                   ),
                 ),
               SizedBox(height: screenHeight * 0.02),
-              // Title TextFormField
               TextFormField(
-                decoration: InputDecoration(labelText: 'Title'),
+                decoration: const InputDecoration(labelText: 'Title'),
                 validator: (value) => value == null || value.isEmpty
                     ? 'Please enter a title'
                     : null,
                 onSaved: (value) => _title = value,
               ),
               SizedBox(height: screenHeight * 0.02),
-              // Date TextFormField
               TextFormField(
-                decoration: InputDecoration(labelText: 'Date'),
+                decoration: const InputDecoration(labelText: 'Date'),
                 validator: (value) => value == null || value.isEmpty
                     ? 'Please enter a date'
                     : null,
                 onSaved: (value) => _date = value,
               ),
               SizedBox(height: screenHeight * 0.02),
-              // Amount TextFormField
               TextFormField(
-                decoration: InputDecoration(labelText: 'Amount'),
+                decoration: const InputDecoration(labelText: 'Amount'),
                 validator: (value) => value == null || value.isEmpty
                     ? 'Please enter an amount'
                     : null,
@@ -177,7 +293,7 @@ class _MaintenanceRequestFormState extends State<MaintenanceRequestForm> {
                     padding: EdgeInsets.symmetric(
                       vertical: screenHeight * 0.01,
                     ),
-                    minimumSize: Size(double.infinity, 50),
+                    minimumSize: const Size(double.infinity, 50),
                   ),
                   onPressed: _submitForm,
                   child: Text(
