@@ -8,6 +8,7 @@ import 'package:flatmate/drawer/language.dart';
 import 'package:flatmate/drawer/profile.dart';
 import 'package:flatmate/drawer/security_details.dart';
 import 'package:flutter/material.dart';
+import '../drawer/changepass.dart';
 import 'add_admin.dart';
 import 'admin_announcement.dart';
 import 'admin_rules.dart';
@@ -337,13 +338,14 @@ class _HomePageAState extends State<HomePageA> {
                     );
                   }),
                   _buildDivider(),
-                  // _buildDrawerItem(Icons.lock, 'Change Password', context, () {
-                  //   Navigator.push(
-                  //     context,
-                  //     MaterialPageRoute(builder: (context) => ProfilePage()),
-                  //   );
-                  // }),
-                  // _buildDivider(),
+                  _buildDrawerItem(Icons.lock, 'Change Password', context, () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ChangePasswordPage()),
+                    );
+                  }),
+                  _buildDivider(),
                   _buildDrawerItem(Icons.security, 'Security Details', context,
                       () {
                     Navigator.push(

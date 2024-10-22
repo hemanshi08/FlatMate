@@ -181,6 +181,8 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('username', username); // Store the username
     if (username.startsWith('admin_')) {
       print("Admin login attempted: $username");
       Map<String, dynamic>? adminData =

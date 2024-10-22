@@ -25,19 +25,37 @@ class DatabaseService {
       FirebaseDatabase.instance.ref().child('complaints');
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  Future<Map<String, dynamic>?> fetchUserDetails(String userId) async {
+  // Fetch admin details by admin_id
+  Future<Map<String, dynamic>?> fetchAdminDetails(String adminId) async {
     try {
-      DocumentSnapshot doc = await _db.collection('users').doc(userId).get();
-
+      final doc = await _db.collection('admin').doc(adminId).get();
       if (doc.exists) {
-        return doc.data() as Map<String, dynamic>;
+        print('Admin document exists.');
+        return doc.data();
       } else {
-        print('User document does not exist.');
-        return null;
+        print('Admin document does not exist.');
+        return null; // Admin document not found
       }
     } catch (e) {
-      print('Error fetching user details: $e');
-      return null;
+      print('Error fetching admin details: $e');
+      return null; // Return null in case of any error
+    }
+  }
+
+  // Fetch resident details by user_id
+  Future<Map<String, dynamic>?> fetchResidentDetails(String userId) async {
+    try {
+      final doc = await _db.collection('residents').doc(userId).get();
+      if (doc.exists) {
+        print('Resident document exists.');
+        return doc.data();
+      } else {
+        print('Resident document does not exist.');
+        return null; // Resident document not found
+      }
+    } catch (e) {
+      print('Error fetching resident details: $e');
+      return null; // Return null in case of any error
     }
   }
 

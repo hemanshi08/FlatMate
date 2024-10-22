@@ -18,7 +18,6 @@ class _ProfilePageState extends State<ProfilePage> {
   int numberOfPeople = 0;
 
   final _formKey = GlobalKey<FormState>();
-
   String editedName = '';
   String editedPhoneNumber = '';
   String editedPeople = '';
@@ -29,45 +28,75 @@ class _ProfilePageState extends State<ProfilePage> {
     _loadUserProfile();
   }
 
-  // Load profile data based on userId stored in SharedPreferences
   Future<void> _loadUserProfile() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? userId = prefs.getString('user_id'); // Fetching the stored user ID
+    String? username = prefs.getString('username'); // Fetch the stored username
+    String? userId;
 
-    if (userId != null) {
-      print('Fetched user_id: $userId');
+    if (username != null) {
+      print('Fetched username: $username');
 
-      // You can now use the userId to fetch the details from your database.
-      final userDetails = await DatabaseService().fetchUserDetails(
-          userId); // Assume you have a function to fetch user details
-
-      if (userDetails != null) {
-        print(
-            'User details fetched: $userDetails'); // Print user details for debugging
-        setState(() {
-          ownerName = userDetails['ownerName'] ?? 'N/A';
-          flatNumber = userDetails['flatNo'] ?? 'N/A';
-          email = userDetails['email'] ?? 'N/A';
-          phoneNumber = userDetails['contactNo'] ?? 'N/A';
-          numberOfPeople = userDetails['eople'] ?? 0;
-        });
+      // Determine role based on username
+      if (username.startsWith('admin_')) {
+        // User is an admin
+        userId = prefs.getString('admin_id'); // Fetch admin ID
+        if (userId != null) {
+          final adminDetails =
+              await DatabaseService().fetchAdminDetails(userId);
+          if (adminDetails != null) {
+            print('Admin details fetched: $adminDetails');
+            setState(() {
+              ownerName = adminDetails['ownerName'] ?? 'N/A';
+              flatNumber = adminDetails['flatNo'] ?? 'N/A';
+              email = adminDetails['email'] ?? 'N/A';
+              phoneNumber = adminDetails['contactNo'] ?? 'N/A';
+              numberOfPeople = adminDetails['numberOfPeople'] ?? 0;
+            });
+            return; // Exit if admin details are found
+          } else {
+            print('Admin document does not exist.');
+          }
+        } else {
+          print('Admin ID is null.');
+        }
       } else {
-        print('No details found for user ID: $userId');
-        setState(() {
-          ownerName = 'N/A';
-          wingNumber = 'N/A';
-          flatNumber = 'N/A';
-          email = 'N/A';
-          phoneNumber = 'N/A';
-          numberOfPeople = 0;
-        });
+        // User is a regular resident
+        userId = prefs.getString('user_id'); // Fetch user ID
+        if (userId != null) {
+          final residentDetails =
+              await DatabaseService().fetchResidentDetails(userId);
+          if (residentDetails != null) {
+            print('Resident details fetched: $residentDetails');
+            setState(() {
+              ownerName = residentDetails['ownerName'] ?? 'N/A';
+              flatNumber = residentDetails['flatNo'] ?? 'N/A';
+              email = residentDetails['email'] ?? 'N/A';
+              phoneNumber = residentDetails['contactNo'] ?? 'N/A';
+              numberOfPeople = residentDetails['numberOfPeople'] ?? 0;
+            });
+            return; // Exit if resident details are found
+          } else {
+            print('Resident document does not exist.');
+          }
+        } else {
+          print('User ID is null for resident.');
+        }
       }
+
+      // If no details found for either admin or resident
+      print('No details found for user ID: $userId');
+      setState(() {
+        ownerName = 'N/A';
+        flatNumber = 'N/A';
+        email = 'N/A';
+        phoneNumber = 'N/A';
+        numberOfPeople = 0;
+      });
     } else {
-      print('No user_id found in SharedPreferences.');
+      print('No username found in SharedPreferences.');
     }
   }
 
-  // Save profile data to SharedPreferences
   Future<void> _saveUserProfileToPreferences() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -79,7 +108,6 @@ class _ProfilePageState extends State<ProfilePage> {
     await prefs.setInt('numberOfPeople', numberOfPeople);
   }
 
-  // Open Edit Profile Modal
   void _editProfile() {
     setState(() {
       editedName = ownerName;
