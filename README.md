@@ -1,2 +1,0 @@
-# FlatMate
-Apartment Application System
