@@ -2,7 +2,6 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flatmate/UserScreens/complain_first.dart';
 import 'package:flatmate/UserScreens/payment_screen.dart';
 import 'package:flatmate/UserScreens/expense_list.dart';
-import 'package:flatmate/data/database_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flatmate/UserScreens/user_dashboard.dart';
 import 'package:flatmate/drawer/contact_details.dart';
@@ -10,12 +9,11 @@ import 'package:flatmate/drawer/language.dart';
 import 'package:flatmate/drawer/profile.dart';
 import 'package:flatmate/drawer/security_details.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
-import 'package:pdf/pdf.dart';
+import 'package:dio/dio.dart';
+import 'package:open_file/open_file.dart';
 
 class MaintenancePage extends StatefulWidget {
   const MaintenancePage({super.key});
@@ -74,7 +72,7 @@ class _MaintenancePageState extends State<MaintenancePage> {
                 currentUserId); // Check if user is part of the request
           }).toList();
 
-          // Fetch owner details for each request
+          // Fetch owner details and payment info for each request
           for (var request in filteredRequests) {
             // Fetch owner information from the 'residents' table using the currentUserId
             final residentSnapshot =
@@ -102,14 +100,25 @@ class _MaintenancePageState extends State<MaintenancePage> {
             if (payments.containsKey(currentUserId)) {
               var userPayment = payments[currentUserId];
               if (userPayment['payment_status'] == 'Paid') {
-                request['isPayable'] =
-                    false; // User has already paid, so no need to pay again
+                request['isPayable'] = false; // User has already paid
                 request['canDownloadReceipt'] =
-                    true; // User can download the receipt
+                    true; // User can download receipt
+
+                // Fetch the receipt URL from the userPayment
+                request['receipt_url'] = userPayment['receipt_url'] ?? '';
+                if (request['receipt_url'].isNotEmpty) {
+                  print(
+                      'Fetched receipt URL: ${request['receipt_url']} for request ID: ${request['requestId']}');
+                } else {
+                  print(
+                      'Receipt URL is empty for request ID: ${request['requestId']}');
+                }
               }
+            } else {
+              print(
+                  'No payment found for user ID: $currentUserId in request ID: ${request['requestId']}');
             }
           }
-
           setState(() {
             _maintenanceRequests = filteredRequests;
           });
@@ -131,78 +140,88 @@ class _MaintenancePageState extends State<MaintenancePage> {
     }
   }
 
-  Future<void> _downloadReceipt({
-    required BuildContext context, // Add BuildContext as a required parameter
-    required String requestId,
-    required String flatNo,
-    required String ownerName,
-    required double amount,
-    required String paymentMethod,
-    required String paymentId,
-    required String transactionId,
-    required String paymentDate,
-    required String title,
-  }) async {
+  Future<void> downloadReceipt(
+      String paymentId, String requestId, String userId) async {
     try {
-      // Create a PDF document
-      final pdf = pw.Document();
+      // Fetch receipt URL
+      String? receiptUrl = await _getReceiptUrl(requestId, userId);
 
-      pdf.addPage(
-        pw.Page(
-          build: (pw.Context context) {
-            return pw.Center(
-              child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text("Payment Receipt", style: pw.TextStyle(fontSize: 24)),
-                  pw.SizedBox(height: 20),
-                  pw.Text("Owner Name: $ownerName"),
-                  pw.Text("Flat No: $flatNo"),
-                  pw.Text("Title: $title"),
-                  pw.Text("Amount Paid: ₹$amount"),
-                  pw.Text("Payment Method: $paymentMethod"),
-                  pw.Text("Payment ID: $paymentId"),
-                  pw.Text("Transaction ID: $transactionId"),
-                  pw.Text("Payment Date: $paymentDate"),
-                  pw.Text("Request ID: $requestId"),
-                ],
-              ),
-            );
-          },
-        ),
-      );
-
-      // Save the PDF file
-      if (await Permission.storage.request().isGranted) {
-        final directory = await getApplicationDocumentsDirectory();
-        final file = File('${directory.path}/receipt_$requestId.pdf');
-        await file.writeAsBytes(await pdf.save());
-
-        // Upload PDF to Firebase Storage
-        final storageRef =
-            FirebaseStorage.instance.ref().child('receipts/$requestId.pdf');
-        await storageRef.putFile(file);
-
-        // Get the download URL
-        final receiptUrl = await storageRef.getDownloadURL();
-
-        // Save receipt URL to Firebase Database
-        await FirebaseDatabase.instance
-            .ref()
-            .child('maintenance_requests/$requestId/payments/$paymentId')
-            .update({
-          'receipt_url': receiptUrl,
-        });
-
-        // Notify user that the receipt has been saved
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Receipt saved and available for download!')),
-        );
+      if (receiptUrl != null && receiptUrl.isNotEmpty) {
+        // Download the PDF receipt
+        String fileName = "maintenance_receipt_$paymentId.pdf";
+        await downloadPdf(receiptUrl, fileName);
       } else {
-        print('Storage permission denied');
+        print('Receipt URL not found for paymentId: $paymentId');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Receipt not available for this payment')),
+        );
       }
     } catch (e) {
       print('Error downloading receipt: $e');
+    }
+  }
+
+// Method to get the receipt URL based on requestId and userId
+  Future<String?> _getReceiptUrl(String requestId, String userId) async {
+    try {
+      final DataSnapshot snapshot = await FirebaseDatabase.instance
+          .ref()
+          .child('maintenance_requests/$requestId/payments/$userId')
+          .get();
+
+      if (snapshot.exists) {
+        final paymentData = snapshot.value as Map<dynamic, dynamic>;
+        return paymentData['receipt_url'] as String?;
+      } else {
+        print(
+            'No payment found for request ID: $requestId and user ID: $userId');
+      }
+    } catch (e) {
+      print('Error fetching receipt URL: $e');
+    }
+    return null;
+  }
+
+// Method to download PDF
+  Future<void> downloadPdf(String url, String fileName) async {
+    // Request permission before downloading
+    await _requestPermission();
+
+    try {
+      Dio dio = Dio();
+      String dir = (await getApplicationDocumentsDirectory()).path;
+
+      // Create the directory if it doesn't exist
+      Directory directory = Directory(dir);
+      if (!await directory.exists()) {
+        await directory.create(recursive: true);
+      }
+
+      // Full file path where the PDF will be saved
+      String filePath = '$dir/$fileName';
+
+      // Start the download
+      await dio.download(url, filePath);
+      print('Download completed: $filePath');
+
+      // Optionally, show a success message
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Downloaded $fileName')));
+
+      // Open the downloaded PDF
+      OpenFile.open(filePath); // Use OpenFile to open the PDF
+    } catch (e) {
+      print('Error downloading PDF: $e');
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error downloading PDF: $e')));
+    }
+  }
+
+// Request storage permission
+  Future<void> _requestPermission() async {
+    var status = await Permission.storage.status;
+    if (!status.isGranted) {
+      await Permission.storage.request();
     }
   }
 
@@ -325,6 +344,7 @@ class _MaintenancePageState extends State<MaintenancePage> {
                   request['requestId'] ?? '',
                   request['flatNo'] ?? '',
                   request['ownerName'] ?? '',
+                  request['receipt_url'] ?? '',
                 );
               }).toList()
             : [Text("No maintenance requests found.")],
@@ -474,6 +494,7 @@ class _MaintenancePageState extends State<MaintenancePage> {
     String requestId,
     String flatNo,
     String ownerName,
+    String receiptUrl, // Add receiptUrl as a parameter
   ) {
     // Format the amount for display
     final formattedAmount = '₹${amount.toStringAsFixed(2)}';
@@ -571,10 +592,41 @@ class _MaintenancePageState extends State<MaintenancePage> {
                   )
                 else
                   TextButton(
-                    onPressed: () {
-                      // Add your download logic here
+                    onPressed: () async {
+                      // Fetch SharedPreferences instance
+                      SharedPreferences prefs =
+                          await SharedPreferences.getInstance();
+
+                      // Retrieve the current user ID
+                      String? currentUserId = prefs.getString('user_id');
+
+                      if (currentUserId != null) {
+                        // Use the receiptUrl parameter directly
+                        // Assume paymentId is the requestId or you can get it from the context
+                        String paymentId =
+                            requestId; // Change this to the correct payment ID
+
+                        // Get the receipt URL using the correct method
+                        String? receiptUrl = await _getReceiptUrl(
+                            paymentId, currentUserId); // Use _getReceiptUrl
+
+                        if (receiptUrl != null && receiptUrl.isNotEmpty) {
+                          print('Downloading PDF from URL: $receiptUrl');
+                          await downloadPdf(
+                            receiptUrl,
+                            'receipt_${paymentId}.pdf',
+                          );
+                        } else {
+                          print(
+                              'Receipt URL is empty for payment ID: $paymentId');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Receipt URL not found.')),
+                          );
+                        }
+                      } else {
+                        print('No user ID found in SharedPreferences.');
+                      }
                     },
-                    // child: Text("Download Receipt"),
                     style: TextButton.styleFrom(
                       padding: EdgeInsets.symmetric(
                         horizontal: screenWidth * 0.04,
