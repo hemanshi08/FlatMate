@@ -1,3 +1,4 @@
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flatmate/UserScreens/complain_first.dart';
 import 'package:flatmate/UserScreens/maintanance_screen.dart';
 import 'package:flatmate/UserScreens/user_dashboard.dart';
@@ -5,15 +6,19 @@ import 'package:flatmate/drawer/contact_details.dart';
 import 'package:flatmate/drawer/language.dart';
 import 'package:flatmate/drawer/profile.dart';
 import 'package:flatmate/drawer/security_details.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 
-// Define the ExpenseItem class
+import '../data/database_service.dart'; // Ensure this exists and is correctly implemented
+
 class ExpenseItem {
   String title;
   String description;
   int amount;
   String vendor;
   String date;
+  String addedBy;
+  String ownerName;
 
   ExpenseItem({
     required this.title,
@@ -21,7 +26,20 @@ class ExpenseItem {
     required this.amount,
     required this.vendor,
     required this.date,
+    required this.addedBy,
+    this.ownerName = 'Unknown',
   });
+
+  factory ExpenseItem.fromMap(Map<dynamic, dynamic> data) {
+    return ExpenseItem(
+      title: data['title'] ?? '',
+      description: data['description'] ?? '',
+      amount: data['amount'] ?? 0,
+      vendor: data['vendor'] ?? '',
+      date: data['date'] ?? '',
+      addedBy: data['added_by'] ?? 'Unknown',
+    );
+  }
 }
 
 class ExpenseListScreen extends StatefulWidget {
@@ -33,62 +51,90 @@ class ExpenseListScreen extends StatefulWidget {
 
 class _ExpenseListScreenState extends State<ExpenseListScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  List<ExpenseItem> _expenses = [];
   int _selectedIndex = 0;
-
-  final List<ExpenseItem> _expenses = [
-    ExpenseItem(
-      title: 'Cleaning',
-      description: 'Monthly Cleaning Service',
-      amount: 2000,
-      vendor: 'CleanSweep',
-      date: '22 Aug, 2024',
-    ),
-    ExpenseItem(
-      title: 'Security',
-      description: 'Security system update',
-      amount: 20000,
-      vendor: 'SecureTech',
-      date: '10 Aug, 2024',
-    ),
-  ];
-
-  int _totalAmount = 50000;
+  double _totalExpense =
+      0.0; // Make sure it's a double to match SharedPreferences storage
 
   @override
   void initState() {
     super.initState();
-    _calculateTotalAmount();
+    _fetchExpenses();
+    _getTotalExpense();
   }
 
-  void _calculateTotalAmount() {
-    _totalAmount = 0;
-    for (var expense in _expenses) {
-      _totalAmount += expense.amount;
+  Future<void> _getTotalExpense() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Use .toDouble() to ensure the fetched value is treated as double
+    setState(() {
+      _totalExpense = (prefs.getDouble('total_expense') ?? 0).toDouble();
+      print('Total Expense fetched from SharedPreferences: $_totalExpense');
+    });
+  }
+
+  Future<void> _saveTotalExpense(int totalExpense) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Store totalExpense as a double
+    await prefs.setDouble('total_expense', totalExpense.toDouble());
+  }
+
+  void _fetchExpenses() async {
+    final databaseReference = FirebaseDatabase.instance.ref();
+
+    DataSnapshot expensesSnapshot =
+        await databaseReference.child('expenses').get();
+    Map<dynamic, dynamic>? expensesData =
+        expensesSnapshot.value as Map<dynamic, dynamic>?;
+
+    DataSnapshot adminSnapshot = await databaseReference.child('admin').get();
+    Map<dynamic, dynamic>? adminData =
+        adminSnapshot.value as Map<dynamic, dynamic>?;
+
+    List<ExpenseItem> expensesList = [];
+
+    if (expensesData != null && adminData != null) {
+      for (var value in expensesData.values) {
+        ExpenseItem expense = ExpenseItem.fromMap(value);
+        String ownerName =
+            adminData[expense.addedBy]?['ownerName'] ?? 'Unknown';
+
+        if (ownerName != 'Unknown') {
+          print('Owner name for ${expense.addedBy}: $ownerName');
+        } else {
+          print('Owner not found for ${expense.addedBy}');
+        }
+
+        expense.ownerName = ownerName;
+        expensesList.add(expense);
+      }
     }
+
+    setState(() {
+      _expenses = expensesList;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
+    var screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: const Color(0xFF06001A),
-        title: Text(
+        title: const Text(
           'Expense List',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 26,
-            letterSpacing: 1,
-          ),
+          style: TextStyle(color: Colors.white, fontSize: 26, letterSpacing: 1),
         ),
         toolbarHeight: 60.0,
         actions: [
           Builder(
             builder: (context) => IconButton(
-              icon: Icon(Icons.menu, color: Colors.white),
+              icon: const Icon(Icons.menu, color: Colors.white),
               iconSize: screenWidth * 0.095,
               onPressed: () {
                 Scaffold.of(context).openEndDrawer();
@@ -96,9 +142,8 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
             ),
           ),
         ],
-        // automaticallyImplyLeading: false, // Disable the back arrow
       ),
-      endDrawer: _buildDrawer(screenWidth), // Right-side drawer
+      endDrawer: _buildDrawer(screenWidth, screenHeight),
       body: Column(
         children: [
           Container(
@@ -110,40 +155,33 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
               borderRadius: BorderRadius.circular(15),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.5),
-                  blurRadius: 10,
-                  spreadRadius: 2,
-                ),
+                    color: Colors.grey.withOpacity(0.5),
+                    blurRadius: 10,
+                    spreadRadius: 2),
               ],
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.sync,
-                  size: screenWidth * 0.12,
-                  color: Colors.amber,
-                ),
+                Icon(Icons.sync, size: screenWidth * 0.12, color: Colors.amber),
                 SizedBox(width: screenWidth * 0.05),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Total Amount',
+                    const Text(
+                      'Total Fund',
                       style: TextStyle(
-                        fontSize: screenWidth * 0.06,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87),
                     ),
-                    SizedBox(height: 5),
+                    const SizedBox(height: 5),
                     Text(
-                      '₹$_totalAmount',
+                      '₹$_totalExpense', // Display total expense
                       style: TextStyle(
-                        fontSize: screenWidth * 0.1,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black),
                     ),
                   ],
                 ),
@@ -170,31 +208,26 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
           // Add logic for navigation on different tabs
           switch (index) {
             case 0:
-              // If home is selected, you can refresh the HomePage or stay here
-              Navigator.push(
+              Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => HomePage()),
               );
               break;
             case 1:
               // Navigate to Maintenance page when Maintenance tab is tapped
-              Navigator.push(
+              Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => MaintenancePage()),
-              ).then((_) {
-                setState(() {
-                  _selectedIndex = 1; // Ensure the Maintenance tab is selected
-                });
-              });
+              );
               break;
             case 2:
-              Navigator.push(
+              Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => ComplaintsScreen()),
               );
               break;
             case 3:
-              Navigator.push(
+              Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => ExpenseListScreen()),
               );
@@ -232,7 +265,27 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
     );
   }
 
-  Widget _buildDrawer(double screenWidth) {
+  Widget _buildExpenseItem(ExpenseItem expense) {
+    return Card(
+      margin: const EdgeInsets.all(10),
+      elevation: 3,
+      child: ListTile(
+        title: Text(expense.title),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Description: ${expense.description}'),
+            Text('Vendor: ${expense.vendor}'),
+            Text('Date: ${expense.date}'),
+            Text('Added By: ${expense.ownerName}'),
+          ],
+        ),
+        trailing: Text('₹${expense.amount}'),
+      ),
+    );
+  }
+
+  Widget _buildDrawer(double screenWidth, double screenHeight) {
     return Drawer(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,7 +299,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
             child: Center(
               child: Column(
                 children: [
-                  SizedBox(height: 20),
+                  SizedBox(height: screenHeight * 0.03),
                   Container(
                     width: screenWidth * 0.25,
                     height: screenWidth * 0.25,
@@ -328,7 +381,8 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                 title: Text('Logout',
                     style: TextStyle(color: const Color(0xFF06001A))),
                 onTap: () {
-                  // Handle logout
+                  // _databaseService.logout(
+                  // context, LoginScreen()); // Call the logout method
                 },
               ),
             ],
@@ -357,133 +411,9 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
   }
 
   Widget _buildDivider() {
-    return Divider(
-      color: const Color(0xFF06001A),
-      thickness: 1.5,
-      indent: 20,
-      endIndent: 20,
-    );
-  }
-
-  Widget _buildExpenseItem(ExpenseItem expense) {
-    double screenWidth = MediaQuery.of(context).size.width;
-
-    return Card(
-      color: const Color(0xFFEDF8F8),
-      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border(
-            left: BorderSide(
-              color: const Color(0xFFD8AFCC),
-              width: screenWidth * 0.02,
-            ),
-          ),
-        ),
-        padding: EdgeInsets.all(screenWidth * 0.04),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  expense.date,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.amber,
-                    fontSize: screenWidth * 0.04,
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF43DBF8),
-                  ),
-                  child: Text(
-                    'Download',
-                    style: TextStyle(
-                      fontSize: screenWidth * 0.03,
-                      color: const Color(0xFF06001A),
-                      letterSpacing: 0.6,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: screenWidth * 0.02),
-            _buildExpenseDetailRow(
-              icon: Icons.title,
-              label: 'Title',
-              value: expense.title,
-              screenWidth: screenWidth,
-            ),
-            _buildExpenseDetailRow(
-              icon: Icons.description,
-              label: 'Description',
-              value: expense.description,
-              screenWidth: screenWidth,
-            ),
-            _buildExpenseDetailRow(
-              icon: Icons.currency_rupee,
-              label: 'Amount',
-              value: '₹${expense.amount}',
-              screenWidth: screenWidth,
-            ),
-            _buildExpenseDetailRow(
-              icon: Icons.person,
-              label: 'Vendor',
-              value: expense.vendor,
-              screenWidth: screenWidth,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Helper widget to build the expense detail rows
-  Widget _buildExpenseDetailRow({
-    required IconData icon,
-    required String label,
-    required String value,
-    required double screenWidth,
-  }) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Icon(
-              icon,
-              size: screenWidth * 0.035,
-              color: Color.fromARGB(255, 54, 54, 54),
-            ),
-            SizedBox(width: screenWidth * 0.02),
-            Text(
-              '$label: ',
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Color.fromARGB(255, 54, 54, 54),
-                fontSize: screenWidth * 0.035,
-                letterSpacing: 0.5,
-              ),
-            ),
-            Expanded(
-              child: Text(
-                value,
-                style: TextStyle(
-                  color: Color.fromARGB(221, 28, 27, 27),
-                  fontSize: screenWidth * 0.035,
-                  letterSpacing: 0.5,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: 5), // Add line spacing between rows
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Divider(color: Colors.black),
     );
   }
 }

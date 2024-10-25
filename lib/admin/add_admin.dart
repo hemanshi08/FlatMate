@@ -62,23 +62,37 @@ class _AddMemberFormState extends State<AddMemberForm> {
       final password = _generateRandomPassword();
 
       try {
-        await _sendEmailToMember(
-          email: email,
-          flatNo: flatNo,
-          ownerName: _ownerNameController.text,
-          people: _peopleController.text,
-          contactNo: _contactNoController.text,
-          username: username,
-          password: password,
-        );
+        // Check if the email or username already exists
+        bool emailExists = await _checkIfEmailExists(email);
+        bool usernameExists = await _checkIfUsernameExists(username);
 
-        await _addMemberToDatabase(newMember, password, username);
+        if (emailExists) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: Email ID already exists')),
+          );
+        } else if (usernameExists) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: Flat No is already exist')),
+          );
+        } else {
+          await _sendEmailToMember(
+            email: email,
+            flatNo: flatNo,
+            ownerName: _ownerNameController.text,
+            people: _peopleController.text,
+            contactNo: _contactNoController.text,
+            username: username,
+            password: password,
+          );
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Admin added and email sent successfully')),
-        );
-        widget.onMemberAdded(newMember);
-        Navigator.pop(context);
+          await _addMemberToDatabase(newMember, password, username);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Admin added and email sent successfully')),
+          );
+          widget.onMemberAdded(newMember);
+          Navigator.pop(context);
+        }
       } catch (error) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $error')),
@@ -120,6 +134,26 @@ class _AddMemberFormState extends State<AddMemberForm> {
       ...memberData,
       'password': password,
     });
+  }
+
+  Future<bool> _checkIfEmailExists(String email) async {
+    final snapshot = await _database
+        .child('admin')
+        .orderByChild('email')
+        .equalTo(email)
+        .once();
+
+    return snapshot.snapshot.exists;
+  }
+
+  Future<bool> _checkIfUsernameExists(String username) async {
+    final snapshot = await _database
+        .child('admin')
+        .orderByChild('username')
+        .equalTo(username)
+        .once();
+
+    return snapshot.snapshot.exists;
   }
 
   String _generateRandomPassword() {
@@ -243,7 +277,7 @@ class _AddMemberFormState extends State<AddMemberForm> {
                           valueColor:
                               AlwaysStoppedAnimation<Color>(Colors.white),
                         )
-                      : Text('Add Member'),
+                      : Text('Add Admin'),
                 ),
               ),
             ],

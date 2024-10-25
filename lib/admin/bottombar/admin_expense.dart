@@ -7,9 +7,46 @@ import 'package:flatmate/drawer/language.dart';
 import 'package:flatmate/drawer/profile.dart';
 import 'package:flatmate/drawer/security_details.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_database/firebase_database.dart'; // Import Realtime Database
 import 'package:shared_preferences/shared_preferences.dart';
-
+import '../../SameScreen/LoginScreen.dart';
+import '../../drawer/changepass.dart';
 import 'expense_form.dart';
+import 'package:flatmate/data/database_service.dart';
+
+class ExpenseItem {
+  String title;
+  String description;
+  int amount;
+  String vendor;
+  String date;
+  String addedBy;
+  String ownerName;
+  String id; // Unique ID for deletion
+
+  ExpenseItem({
+    required this.title,
+    required this.description,
+    required this.amount,
+    required this.vendor,
+    required this.date,
+    required this.addedBy,
+    this.ownerName = 'Unknown',
+    required this.id,
+  });
+
+  factory ExpenseItem.fromMap(Map<dynamic, dynamic> data, String id) {
+    return ExpenseItem(
+      title: data['title'] ?? '',
+      description: data['description'] ?? '',
+      amount: data['amount'] ?? 0,
+      vendor: data['vendor'] ?? '',
+      date: data['date'] ?? '',
+      addedBy: data['added_by'] ?? 'Unknown',
+      id: id,
+    );
+  }
+}
 
 class AdminExpense extends StatefulWidget {
   const AdminExpense({super.key});
@@ -20,41 +57,93 @@ class AdminExpense extends StatefulWidget {
 
 class _AdminExpenseState extends State<AdminExpense> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  List<ExpenseItem> expenses = []; // Changed to ExpenseItem
+  String? adminId;
+  double _totalExpense = 0.0;
+  late DatabaseReference databaseReference; // Declare the reference
   int _selectedIndex = 0;
-
-  List<Map<String, dynamic>> expenses = [
-    {
-      "title": "Monthly Electricity Bill",
-      "date": "August 15, 2024",
-      "description": "Regular monthly electricity bill for the common areas.",
-      "vendor": "PowerGrid Inc.",
-      "amount": 1200.00,
-    },
-    {
-      "title": "Security Camera Installation",
-      "date": "August 20, 2024",
-      "description": "Installation of security cameras around the premises.",
-      "vendor": "SafeHome Security",
-      "amount": 10000.00,
-    },
-  ];
-
-  // Function to delete an expense
-  void _deleteExpense(int index) {
-    setState(() {
-      expenses.removeAt(index);
-    });
+  @override
+  void initState() {
+    super.initState();
+    databaseReference =
+        FirebaseDatabase.instance.ref(); // Initialize databaseReference
+    _fetchExpenses();
+    _getAdminId();
   }
 
-  // Function to navigate to AddExpenseForm and receive result
-  // Function to navigate to AddExpenseForm and receive result
-  Future<void> _navigateToAddExpense() async {
+  Future<void> _getAdminId() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? adminId = prefs.getString('admin_id'); // Fetching admin ID
+    adminId = prefs.getString('admin_id'); // Fetching admin ID
+  }
 
-    // Check if adminId is null and handle it accordingly
+  Future<void> _fetchExpenses() async {
+    try {
+      DataSnapshot expensesSnapshot =
+          await databaseReference.child('expenses').get();
+      DataSnapshot adminSnapshot = await databaseReference.child('admin').get();
+
+      // Ensure the data is a Map
+      Map<dynamic, dynamic>? expensesData = expensesSnapshot.value
+          as Map<dynamic, dynamic>?; // Fetch expenses data
+      Map<dynamic, dynamic>? adminData =
+          adminSnapshot.value as Map<dynamic, dynamic>?; // Fetch admin data
+
+      List<ExpenseItem> expensesList = [];
+
+      // Check if expensesData is not null
+      if (expensesData != null) {
+        // Loop through each entry in expensesData
+        expensesData.forEach((key, value) {
+          // Check if the value is a Map<String, dynamic>
+          if (value is Map<dynamic, dynamic>) {
+            // Create an ExpenseItem from the Map
+            ExpenseItem expense =
+                ExpenseItem.fromMap(value, key); // Use key as id
+
+            // Fetch the owner name from the admin data based on the addedBy field
+            if (adminData != null) {
+              var adminInfo = adminData[expense.addedBy];
+              if (adminInfo != null && adminInfo is Map) {
+                expense.ownerName =
+                    adminInfo['ownerName'] ?? 'Unknown'; // Set ownerName
+              }
+            }
+
+            expensesList.add(expense);
+          }
+        });
+
+        setState(() {
+          expenses = expensesList; // Update the expenses list
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching expenses: $e')),
+      );
+    }
+  }
+
+  // Function to delete an expense
+  void _deleteExpense(int index) async {
+    try {
+      String expenseId = expenses[index].id; // Get the ID of the expense
+      await databaseReference
+          .child('expenses/$expenseId')
+          .remove(); // Delete from Realtime Database
+
+      setState(() {
+        expenses.removeAt(index);
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error deleting expense: $e')),
+      );
+    }
+  }
+
+  Future<void> _navigateToAddExpense() async {
     if (adminId == null) {
-      // Show an error message or handle the null case
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Admin ID is not available.')),
       );
@@ -65,7 +154,7 @@ class _AdminExpenseState extends State<AdminExpense> {
       context,
       MaterialPageRoute(
         builder: (context) =>
-            AddExpenseForm(adminId: adminId), // Pass adminId here
+            AddExpenseForm(adminId: adminId!), // Pass adminId here
       ),
     );
 
@@ -116,10 +205,8 @@ class _AdminExpenseState extends State<AdminExpense> {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color:
-                          const Color(0xFF4CD8F4), // Set the background color
-                      borderRadius:
-                          BorderRadius.circular(10), // Rounded corners
+                      color: const Color(0xFF4CD8F4),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: TextButton(
                       onPressed: _navigateToAddExpense,
@@ -129,15 +216,10 @@ class _AdminExpenseState extends State<AdminExpense> {
                           Text(
                             '  Add Expense',
                             style: TextStyle(
-                              color: Colors.black, // Text color
-                              fontSize:
-                                  screenWidth * 0.045, // Responsive font size
-                            ),
+                                color: Colors.black,
+                                fontSize: screenWidth * 0.045),
                           ),
-                          Icon(
-                            Icons.add,
-                            color: Colors.black, // Icon color
-                          ),
+                          Icon(Icons.add, color: Colors.black),
                         ],
                       ),
                     ),
@@ -155,10 +237,7 @@ class _AdminExpenseState extends State<AdminExpense> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: Colors.grey,
-                        width: 1,
-                      ),
+                      border: Border.all(color: Colors.grey, width: 1),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -173,13 +252,11 @@ class _AdminExpenseState extends State<AdminExpense> {
                             ),
                           ),
                           child: Text(
-                            expenses[index]["title"],
+                            expenses[index].title,
                             style: TextStyle(
-                              fontSize:
-                                  screenWidth * 0.043, // Slightly smaller font
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
+                                fontSize: screenWidth * 0.043,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87),
                           ),
                         ),
                         Padding(
@@ -188,113 +265,55 @@ class _AdminExpenseState extends State<AdminExpense> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Date : ${expenses[index]["date"]}',
+                                'Date : ${expenses[index].date}',
                                 style: TextStyle(
-                                  fontSize: screenWidth *
-                                      0.038, // Slightly smaller font
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                    fontSize: screenWidth * 0.038,
+                                    fontWeight: FontWeight.w500),
                               ),
                               SizedBox(height: screenHeight * 0.008),
                               Text(
-                                'Description : ${expenses[index]["description"]}',
+                                'Description : ${expenses[index].description}',
                                 style: TextStyle(
-                                  fontSize: screenWidth * 0.038,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                    fontSize: screenWidth * 0.038,
+                                    fontWeight: FontWeight.w500),
                               ),
                               SizedBox(height: screenHeight * 0.008),
                               Text(
-                                'Vendor : ${expenses[index]["vendor"]}',
+                                'Vendor : ${expenses[index].vendor}',
                                 style: TextStyle(
-                                  fontSize: screenWidth * 0.038,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                    fontSize: screenWidth * 0.038,
+                                    fontWeight: FontWeight.w500),
+                              ),
+                              SizedBox(height: screenHeight * 0.008),
+                              // Text(
+                              //   'Added By : ${expenses[index].addedBy}',
+                              //   style: TextStyle(
+                              //       fontSize: screenWidth * 0.038,
+                              //       fontWeight: FontWeight.w500),
+                              // ),
+                              // SizedBox(height: screenHeight * 0.008),
+                              Text(
+                                'Owner Name : ${expenses[index].ownerName}',
+                                style: TextStyle(
+                                    fontSize: screenWidth * 0.038,
+                                    fontWeight: FontWeight.w500),
                               ),
                               SizedBox(height: screenHeight * 0.008),
                               Text(
-                                'Amount : ${expenses[index]["amount"].toStringAsFixed(2)}',
+                                'Amount : ₹${expenses[index].amount}',
                                 style: TextStyle(
-                                  fontSize: screenWidth * 0.038,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                    fontSize: screenWidth * 0.038,
+                                    fontWeight: FontWeight.w500),
                               ),
-                              SizedBox(height: screenHeight * 0.01),
+                              SizedBox(height: screenHeight * 0.008),
                               Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      // Implement edit functionality here
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Color.fromARGB(
-                                          255,
-                                          122,
-                                          197,
-                                          143), // Suggest greenish color for EDIT
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: screenHeight * 0.009,
-                                        horizontal: screenWidth * 0.06,
-                                      ),
-                                      elevation: 0, // No shadow
-                                    ),
-                                    child: Text(
-                                      'EDIT',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      // Implement download functionality here
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue,
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: screenHeight * 0.009,
-                                        horizontal: screenWidth * 0.06,
-                                      ),
-                                      elevation: 0, // No shadow
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.download,
-                                          size: screenWidth * 0.04,
-                                          color: Colors.white,
-                                        ),
-                                        SizedBox(width: screenWidth * 0.01),
-                                        Text(
-                                          'Download',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: () => _deleteExpense(index),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red,
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: screenHeight * 0.009,
-                                        horizontal: screenWidth * 0.06,
-                                      ),
-                                      elevation: 0, // No shadow
-                                    ),
-                                    child: Text(
-                                      'DELETE',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
+                                  IconButton(
+                                    onPressed: () => _deleteExpense(
+                                        index), // Delete on click
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.red),
                                   ),
                                 ],
                               ),
@@ -436,13 +455,14 @@ class _AdminExpenseState extends State<AdminExpense> {
                     );
                   }),
                   _buildDivider(),
-                  // _buildDrawerItem(Icons.lock, 'Change Password', context, () {
-                  //   Navigator.push(
-                  //     context,
-                  //     MaterialPageRoute(builder: (context) => ProfilePage()),
-                  //   );
-                  // }),
-                  // _buildDivider(),
+                  _buildDrawerItem(Icons.lock, 'Change Password', context, () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ChangePasswordPage()),
+                    );
+                  }),
+                  _buildDivider(),
                   _buildDrawerItem(Icons.security, 'Security Details', context,
                       () {
                     Navigator.push(
@@ -473,7 +493,8 @@ class _AdminExpenseState extends State<AdminExpense> {
                 title: Text('Logout',
                     style: TextStyle(color: const Color(0xFF06001A))),
                 onTap: () {
-                  // Handle logout
+                  // _databaseService.logout(
+                  // context, LoginScreen()); // Call the logout method
                 },
               ),
             ],
