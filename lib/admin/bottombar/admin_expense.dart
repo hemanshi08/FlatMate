@@ -7,6 +7,7 @@ import 'package:flatmate/drawer/language.dart';
 import 'package:flatmate/drawer/profile.dart';
 import 'package:flatmate/drawer/security_details.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'expense_form.dart';
 
@@ -46,11 +47,25 @@ class _AdminExpenseState extends State<AdminExpense> {
   }
 
   // Function to navigate to AddExpenseForm and receive result
+  // Function to navigate to AddExpenseForm and receive result
   Future<void> _navigateToAddExpense() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? adminId = prefs.getString('admin_id'); // Fetching admin ID
+
+    // Check if adminId is null and handle it accordingly
+    if (adminId == null) {
+      // Show an error message or handle the null case
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Admin ID is not available.')),
+      );
+      return; // Exit the function if adminId is null
+    }
+
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AddExpenseForm(),
+        builder: (context) =>
+            AddExpenseForm(adminId: adminId), // Pass adminId here
       ),
     );
 
