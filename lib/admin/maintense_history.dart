@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class MaintenanceHistoryScreen extends StatefulWidget {
   const MaintenanceHistoryScreen({super.key});
@@ -12,52 +13,132 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
   bool isPaidSelected = true;
   TextEditingController searchController = TextEditingController();
   List<Map<String, String>> displayedList = [];
+  List<Map<String, String>> allEntries = []; // Store all entries for searching
 
-  // Sample data for paid and unpaid maintenance lists
-  final List<Map<String, String>> paidList = [
-    {'flat': 'A-401', 'name': 'Hemanshi Garnara'},
-    {'flat': 'C-201', 'name': 'Kashish Koshiya'},
-    {'flat': 'B-604', 'name': 'Ishan Mishra'},
-    {'flat': 'A-804', 'name': 'Himesh Vaghela'},
-  ];
-
-  final List<Map<String, String>> unpaidList = [
-    {'flat': 'D-302', 'name': 'Priya Patel'},
-    {'flat': 'E-103', 'name': 'Rahul Mehta'},
-    {'flat': 'F-401', 'name': 'Anjali Shah'},
-  ];
+  // Firebase Database reference
+  final database = FirebaseDatabase.instance.ref();
 
   @override
   void initState() {
     super.initState();
-    // Initially, the displayed list is the paid list
-    displayedList = paidList;
+    fetchMaintenanceData();
 
-    // Add listener to the searchController to update the list when the text changes
+    // Update displayed list when search text changes
     searchController.addListener(() {
       updateSearchResults(searchController.text);
     });
   }
 
-  void updateSearchResults(String query) {
-    List<Map<String, String>> originalList =
-        isPaidSelected ? paidList : unpaidList;
+  Future<Map<String, String>> fetchResidentsData() async {
+    try {
+      DatabaseEvent event = await database.child('residents').once();
+      print("Residents Event: ${event.snapshot.value}"); // Debug log
 
-    if (query.isEmpty) {
-      setState(() {
-        displayedList = originalList;
-      });
-    } else {
-      setState(() {
-        displayedList = originalList.where((element) {
-          return element['flat']!.toLowerCase().contains(query.toLowerCase()) ||
-              element['name']!.toLowerCase().contains(query.toLowerCase());
-        }).toList();
-      });
+      if (event.snapshot.exists) {
+        Map<dynamic, dynamic>? data =
+            event.snapshot.value as Map<dynamic, dynamic>?;
+
+        if (data != null) {
+          Map<String, String> residentsMap = {};
+          data.forEach((key, value) {
+            if (value is Map<dynamic, dynamic>) {
+              String userId = key.toString();
+              // Check if keys exist before accessing their values
+              String flatNo = value.containsKey('flatNo')
+                  ? value['flatNo']
+                  : 'Unknown Flat';
+              String ownerName = value.containsKey('ownerName')
+                  ? value['ownerName']
+                  : 'Unknown Owner';
+              residentsMap[userId] = '$flatNo,$ownerName';
+            }
+          });
+          return residentsMap;
+        } else {
+          print("No data found for residents.");
+        }
+      } else {
+        print("Snapshot does not exist for residents.");
+      }
+    } catch (e) {
+      print("Error fetching residents data: $e");
+    }
+    return {};
+  }
+
+  Future<void> fetchMaintenanceData() async {
+    try {
+      Map<String, String> residentsMap = await fetchResidentsData();
+      print("Residents Data: $residentsMap"); // Debug log
+
+      DatabaseEvent event = await database.child('maintenance_requests').once();
+      print("Maintenance Requests Data: ${event.snapshot.value}"); // Debug log
+
+      Map<dynamic, dynamic>? data =
+          event.snapshot.value as Map<dynamic, dynamic>?;
+
+      if (data != null) {
+        List<Map<String, String>> paid = [];
+        List<Map<String, String>> unpaid = [];
+
+        data.forEach((key, request) {
+          if (request is Map<dynamic, dynamic> &&
+              request.containsKey('payments') &&
+              request['payments'] is Map) {
+            Map<dynamic, dynamic> payments = request['payments'];
+
+            payments.forEach((paymentKey, payment) {
+              if (payment is Map<dynamic, dynamic> &&
+                  payment.containsKey('payment_status')) {
+                String status = payment['payment_status'] as String;
+                String userId = payment['user_id'] ??
+                    ''; // Assuming user_id is stored in payment
+                String flatAndName =
+                    residentsMap[userId] ?? 'Unknown Flat, Unknown Owner';
+                List<String> flatAndOwnerDetails = flatAndName.split(',');
+
+                String flat = flatAndOwnerDetails[0];
+                String name = flatAndOwnerDetails[1];
+
+                if (status == 'Paid') {
+                  paid.add({'flat': flat, 'name': name});
+                } else {
+                  unpaid.add({'flat': flat, 'name': name});
+                }
+              }
+            });
+          }
+        });
+
+        allEntries =
+            isPaidSelected ? paid : unpaid; // Store all entries for searching
+        print(
+            "Fetched Entries: $allEntries"); // Debug log to check fetched entries
+        setState(() {
+          displayedList = allEntries;
+        });
+      } else {
+        print("No data found in Firebase for maintenance_requests.");
+      }
+    } catch (e) {
+      print("Error fetching data: $e");
     }
   }
 
-  // Function to clear the search field
+  void updateSearchResults(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        displayedList =
+            allEntries; // Reset to all entries when the query is empty
+      } else {
+        displayedList = allEntries.where((element) {
+          return element['flat']!.toLowerCase().contains(query.toLowerCase()) ||
+              element['name']!.toLowerCase().contains(query.toLowerCase());
+        }).toList();
+      }
+    });
+  }
+
   void clearSearch() {
     searchController.clear();
   }
@@ -87,7 +168,6 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(height: screenHeight * 0.01),
-            // Search TextField
             TextField(
               controller: searchController,
               decoration: InputDecoration(
@@ -95,7 +175,7 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
                 prefixIcon: Icon(Icons.search, color: Colors.black),
                 suffixIcon: IconButton(
                   icon: Icon(Icons.clear, color: Colors.black),
-                  onPressed: clearSearch, // Clear search functionality
+                  onPressed: clearSearch,
                 ),
                 border: UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.pink),
@@ -104,8 +184,7 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
                   borderSide: BorderSide(color: Colors.grey),
                 ),
                 focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(
-                      color: Colors.cyan), // Cyan border when focused
+                  borderSide: BorderSide(color: Colors.cyan),
                 ),
                 contentPadding: EdgeInsets.symmetric(
                   vertical: screenHeight * 0.02,
@@ -113,9 +192,7 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
                 ),
               ),
             ),
-
             SizedBox(height: screenHeight * 0.02),
-            // Paid / Unpaid toggle buttons
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
@@ -128,16 +205,14 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
                     child: GestureDetector(
                       onTap: () {
                         setState(() {
-                          isPaidSelected = true; // Select paid list
-                          displayedList = paidList;
-                          updateSearchResults(searchController
-                              .text); // Apply search to paid list
+                          isPaidSelected = true;
+                          fetchMaintenanceData(); // Refresh list
                         });
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
-                          color: isPaidSelected == true
+                          color: isPaidSelected
                               ? const Color(0xFFD8AFCC)
                               : Colors.transparent,
                           borderRadius: const BorderRadius.only(
@@ -162,16 +237,14 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
                     child: GestureDetector(
                       onTap: () {
                         setState(() {
-                          isPaidSelected = false; // Select unpaid list
-                          displayedList = unpaidList;
-                          updateSearchResults(searchController
-                              .text); // Apply search to unpaid list
+                          isPaidSelected = false;
+                          fetchMaintenanceData(); // Refresh list
                         });
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
-                          color: isPaidSelected == false
+                          color: !isPaidSelected
                               ? const Color(0xFFD8AFCC)
                               : Colors.transparent,
                           borderRadius: const BorderRadius.only(
@@ -196,54 +269,77 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
               ),
             ),
             SizedBox(height: screenHeight * 0.02),
-
-            // List of maintenance records with shadows
             Expanded(
-              child: ListView.builder(
-                itemCount: displayedList.length,
-                itemBuilder: (context, index) {
-                  final data = displayedList[index];
-                  return Padding(
-                    padding:
-                        EdgeInsets.symmetric(vertical: screenHeight * 0.01),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                          vertical: screenHeight * 0.02,
-                          horizontal: screenWidth * 0.05),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(screenWidth * 0.04),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            spreadRadius: 1,
-                            blurRadius: 5,
-                            offset: const Offset(0, 2), // Shadow position
-                          ),
-                        ],
+              child: displayedList.isEmpty
+                  ? Center(
+                      child: Text(
+                        "No records found.",
+                        style: TextStyle(
+                          fontSize: screenWidth * 0.05,
+                          color: Colors.grey,
+                        ),
                       ),
-                      child: Row(
-                        children: [
-                          Text(
-                            data['flat']!,
-                            style: TextStyle(
-                              fontSize: screenWidth * 0.04 * textScaleFactor,
-                              fontWeight: FontWeight.w600,
+                    )
+                  : ListView.builder(
+                      itemCount: displayedList.length,
+                      itemBuilder: (context, index) {
+                        final data = displayedList[index];
+                        return Padding(
+                          padding: EdgeInsets.symmetric(
+                              vertical: screenHeight * 0.01),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                vertical: screenHeight * 0.02,
+                                horizontal: screenWidth * 0.05),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius:
+                                  BorderRadius.circular(screenWidth * 0.04),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  spreadRadius: 1,
+                                  blurRadius: 3,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Flat No: ${data['flat']}",
+                                      style: TextStyle(
+                                        fontSize: screenWidth * 0.045,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      "Owner: ${data['name']}",
+                                      style: TextStyle(
+                                        fontSize: screenWidth * 0.04,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Icon(
+                                  isPaidSelected
+                                      ? Icons.check_circle
+                                      : Icons.warning,
+                                  color: isPaidSelected
+                                      ? Colors.green
+                                      : Colors.red,
+                                ),
+                              ],
                             ),
                           ),
-                          SizedBox(width: screenWidth * 0.03),
-                          Text(
-                            data['name']!,
-                            style: TextStyle(
-                              fontSize: screenWidth * 0.04 * textScaleFactor,
-                            ),
-                          ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ],
         ),
