@@ -1,16 +1,47 @@
-# flatmate
+# FlatMate
 
-A new Flutter project.
+A comprehensive apartment management application built with Flutter.
 
-## Getting Started
+## Description
+FlatMate is a full-featured apartment management system, offering both user and admin functionalities to handle essential apartment-related activities. From managing maintenance requests and payments to organizing community events and addressing complaints, FlatMate simplifies apartment management for both residents and administrators.
 
-This project is a starting point for a Flutter application.
+## Features
 
-A few resources to get you started if this is your first Flutter project:
+### User Panel
+- **Maintenance Requests**: View and make payments, download payment receipts.
+- **Announcements**: Stay updated with community announcements.
+- **Complaints**: Submit and track complaints.
+- **Profile Management**: Update personal details and contact information.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+### Admin Panel
+- **Maintenance Management**: Create requests, track payment statuses, and view maintenance history.
+- **Community Announcements**: Post announcements for all users.
+- **Complaint Management**: View and address user complaints.
+- **Expense Tracking**: Add and manage apartment-related expenses.
+- **User & Admin Management**: Send emails with login credentials to new members and manage profiles.
+- **Profile & Preferences**: Change personal information, contact details.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Technologies Used
+
+- **Flutter**: Main framework for mobile and desktop application development.
+- **Firebase Realtime Database**: For storing data such as admin/user details, maintenance requests, and expenses.
+- **Firebase Storage**: For uploading and managing receipt files and downloadable resources.
+- **Shared Preferences**: Used to manage user sessions and store identifiers.
+- **PDF Generation**: Custom PDF receipts generated within the app using `pdf` package.
+- **Payment Integration**: Razorpay integration for handling user payments.
+- **Internationalization**: `intl` package for currency and date formatting.
+- **Path Provider**: For temporary file storage.
+- **Firebase Authentication**: Provides secure user login sessions.
+
+### Cross-Platform Support
+- Android, iOS .
+
+## Installation
+
+To set up the project locally:
+
+```bash
+git clone https://github.com/hemanshi08/FlatMate
+cd FlatMate
+flutter pub get
+flutter run
