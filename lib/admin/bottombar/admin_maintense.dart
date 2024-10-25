@@ -20,14 +20,15 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedIndex = 0;
 
-  // Replace this with your actual database service to fetch maintenance requests
   List<Map<String, dynamic>> maintenanceRequests = [];
-  bool _isLoading = false; // Track loading state
+  bool _isLoading = false;
+  List<String> selectedResidents =
+      []; // State variable to store selected residents
 
   @override
   void initState() {
     super.initState();
-    _fetchMaintenanceRequests(); // Fetch maintenance data when screen loads
+    _fetchMaintenanceRequests();
   }
 
   // Function to fetch maintenance requests from the database
@@ -60,14 +61,13 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
 
     return Scaffold(
       key: _scaffoldKey,
-
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: Text(
           'Maintenance',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 26 * textScaleFactor, // Adjusted for text scale factor
+            fontSize: 26 * textScaleFactor,
             letterSpacing: 1,
           ),
         ),
@@ -78,20 +78,17 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
             icon: Icon(Icons.menu, color: Colors.white),
             iconSize: screenWidth * 0.095,
             onPressed: () {
-              _scaffoldKey.currentState
-                  ?.openEndDrawer(); // Open right-side drawer
+              _scaffoldKey.currentState?.openEndDrawer();
             },
           ),
         ],
       ),
-      endDrawer: _buildDrawer(screenWidth, screenHeight), // Right-side drawer
-
+      endDrawer: _buildDrawer(screenWidth, screenHeight),
       body: Padding(
-        padding: EdgeInsets.all(screenWidth * 0.05), // Responsive padding
+        padding: EdgeInsets.all(screenWidth * 0.05),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // "Make Request" Button
             Align(
               alignment: Alignment.topRight,
               child: ElevatedButton(
@@ -103,7 +100,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                   padding: EdgeInsets.symmetric(
                     vertical: screenHeight * 0.013,
                     horizontal: screenWidth * 0.06,
-                  ), // Button padding
+                  ),
                 ),
                 onPressed: () async {
                   final result = await Navigator.push(
@@ -114,14 +111,13 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                   );
 
                   if (result != null) {
-                    // Handle the returned values (title, date, amount)
                     _fetchMaintenanceRequests(); // Refresh the list after making a request
                   }
                 },
                 child: Text(
                   'Make Request',
                   style: TextStyle(
-                    fontSize: screenWidth * 0.04, // Responsive font size
+                    fontSize: screenWidth * 0.04,
                     color: Colors.white,
                   ),
                 ),
@@ -132,12 +128,11 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
             // Maintenance History List
             Expanded(
               child: _isLoading
-                  ? Center(child: CircularProgressIndicator()) // Show loading
+                  ? Center(child: CircularProgressIndicator())
                   : maintenanceRequests.isEmpty
-                      ? Center(child: CircularProgressIndicator())
+                      ? Center(child: Text('No maintenance requests found.'))
                       : ListView.builder(
-                          itemCount: maintenanceRequests
-                              .length, // Make sure this is updated
+                          itemCount: maintenanceRequests.length,
                           itemBuilder: (context, index) {
                             final request = maintenanceRequests[index];
                             return Column(
@@ -158,7 +153,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                                   request['title'] ?? 'No Title',
                                   '₹${request['amount']}',
                                   request['isPayable'] ?? false,
-                                  request['users'] ?? {},
+                                  request['users'] ?? {}, // Pass user data
                                 ),
                                 SizedBox(height: screenHeight * 0.02),
                               ],
@@ -176,7 +171,6 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
             _selectedIndex = index;
           });
 
-          // Add logic for navigation on different tabs
           switch (index) {
             case 0:
               Navigator.pushReplacement(
@@ -185,7 +179,6 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
               );
               break;
             case 1:
-              // Navigate to Maintenance page when Maintenance tab is tapped
               break;
             case 2:
               Navigator.pushReplacement(
@@ -291,13 +284,6 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                     );
                   }),
                   _buildDivider(),
-                  // _buildDrawerItem(Icons.lock, 'Change Password', context, () {
-                  //   Navigator.push(
-                  //     context,
-                  //     MaterialPageRoute(builder: (context) => ProfilePage()),
-                  //   );
-                  // }),
-                  // _buildDivider(),
                   _buildDrawerItem(Icons.security, 'Security Details', context,
                       () {
                     Navigator.push(
@@ -315,99 +301,78 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                           builder: (context) => ContactDetailsPage()),
                     );
                   }),
-                  _buildDivider(),
                 ],
               ),
             ),
-          ),
-          Column(
-            children: [
-              Divider(thickness: 2, color: const Color(0xFF06001A)),
-              ListTile(
-                leading: Icon(Icons.logout, color: const Color(0xFF06001A)),
-                title: Text('Logout',
-                    style: TextStyle(color: const Color(0xFF06001A))),
-                onTap: () {
-                  // Handle logout
-                },
-              ),
-            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDrawerItem(IconData icon, String title, BuildContext context,
-      [VoidCallback? onTap]) {
+  Divider _buildDivider() {
+    return Divider(
+      color: Colors.grey,
+      height: 1,
+      thickness: 1,
+      indent: 15,
+      endIndent: 15,
+    );
+  }
+
+  Widget _buildDrawerItem(
+      IconData icon, String title, BuildContext context, Function onTap) {
     return ListTile(
-      leading: Icon(icon, color: const Color(0xFF06001A)),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: const Color(0xFF06001A),
-          fontSize: 16,
-        ),
+      leading: Icon(icon, size: 30),
+      title: Text(title, style: TextStyle(fontSize: 20)),
+      onTap: () => onTap(),
+    );
+  }
+
+  // Maintenance card widget
+  Widget maintenanceCard(
+    double screenWidth,
+    double screenHeight,
+    double textScaleFactor,
+    String title,
+    String amount,
+    bool isPayable,
+    Map<String, dynamic> users,
+  ) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: screenHeight * 0.01),
+      padding: EdgeInsets.all(screenWidth * 0.04),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(screenWidth * 0.03),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 2,
+            blurRadius: 5,
+            offset: Offset(0, 3), // Shadow position
+          ),
+        ],
       ),
-      onTap: onTap ??
-          () {
-            // Default tap action (if not provided)
-          },
-    );
-  }
-
-  Widget _buildDivider() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Divider(color: Colors.black),
-    );
-  }
-}
-
-// Maintenance card widget remains unchanged
-Widget maintenanceCard(
-  double screenWidth,
-  double screenHeight,
-  double textScaleFactor,
-  String title,
-  String fee,
-  bool isPayable,
-  Map<String, dynamic> users, // Map of user details (flatNo, ownerName)
-) {
-  // Display user details (flatNo and ownerName)
-  String recipientInfo;
-  if (users.length > 1) {
-    recipientInfo = 'Request sent to all members';
-  } else {
-    final user = users.isNotEmpty ? users.values.first : null;
-    recipientInfo = user != null
-        ? 'Flat: ${user['flatNo']}, Owner: ${user['ownerName']}'
-        : 'Unknown User'; // Display user details
-  }
-
-  return Card(
-    elevation: 2,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-    child: Padding(
-      padding: EdgeInsets.all(screenWidth * 0.05), // Responsive padding
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Left icon (circle with checkmark or other indicator)
           Container(
-            height: 50,
-            width: 50,
+            width: screenWidth * 0.12,
+            height: screenWidth * 0.12,
             decoration: BoxDecoration(
-              color: const Color(0xFFD8AFCC),
+              color: Colors.purple[100],
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               Icons.check_circle,
+              size: screenWidth * 0.08,
               color: Colors.white,
-              size: 30,
             ),
           ),
-          SizedBox(width: screenWidth * 0.04), // Spacing between icon and text
-
-          // Maintenance Details
+          SizedBox(width: screenWidth * 0.03),
+          // Maintenance details (title, amount, date)
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -415,32 +380,135 @@ Widget maintenanceCard(
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: screenWidth * 0.045, // Responsive font size
+                    fontSize: screenWidth * 0.045,
                     fontWeight: FontWeight.bold,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-                Text(
-                  fee,
-                  style: TextStyle(
-                    fontSize: screenWidth * 0.04, // Responsive font size
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.2,
+                    color: Colors.black,
                   ),
                 ),
                 SizedBox(height: screenHeight * 0.01),
                 Text(
-                  recipientInfo, // Display flatNo and ownerName
+                  amount,
                   style: TextStyle(
-                    fontSize: screenWidth * 0.04, // Responsive font size
+                    fontSize: screenWidth * 0.04,
+                    color: Colors.black,
+                  ),
+                ),
+                SizedBox(height: screenHeight * 0.005),
+                Text(
+                  '5 July, 2024', // Static date for demo; you should use dynamic data
+                  style: TextStyle(
+                    fontSize: screenWidth * 0.035,
                     color: Colors.grey,
                   ),
                 ),
               ],
             ),
           ),
+          // Cash or Pay button
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              isPayable
+                  ? ElevatedButton(
+                      onPressed: () {
+                        // Handle payment here
+                      },
+                      child: Text('Pay'),
+                    )
+                  : ElevatedButton(
+                      onPressed: () {
+                        showResidentsDialog(users);
+                      },
+                      child: Text('Cash'),
+                    ),
+            ],
+          ),
         ],
       ),
-    ),
-  );
+    );
+  }
+
+  // Show residents dialog
+  void showResidentsDialog(Map<String, dynamic> users) {
+    List<String> selectedResidents = [];
+    TextEditingController searchController = TextEditingController();
+    String searchQuery = '';
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            List filteredUsers = users.entries
+                .where((entry) => entry.value
+                    .toString()
+                    .toLowerCase()
+                    .contains(searchQuery.toLowerCase()))
+                .toList();
+
+            return AlertDialog(
+              title: Column(
+                children: [
+                  Text('Residents'),
+                  TextField(
+                    controller: searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search by flat no or name',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        searchQuery = value;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              content: Container(
+                width: double.maxFinite,
+                height: 300, // Limit the height of the dialog box
+                child: ListView.builder(
+                  itemCount: filteredUsers.length,
+                  itemBuilder: (context, index) {
+                    String residentName = filteredUsers[index].value.toString();
+                    bool isSelected = selectedResidents.contains(residentName);
+
+                    return CheckboxListTile(
+                      title: Text(residentName),
+                      value: isSelected,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          if (value == true) {
+                            selectedResidents.add(residentName);
+                          } else {
+                            selectedResidents.remove(residentName);
+                          }
+                        });
+                      },
+                    );
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close the dialog
+                  },
+                  child: Text('Close'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    print('Selected Residents: $selectedResidents');
+                    Navigator.of(context)
+                        .pop(); // Close the dialog after selection
+                  },
+                  child: Text('Submit'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 }

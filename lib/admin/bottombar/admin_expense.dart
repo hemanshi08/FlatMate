@@ -1,17 +1,51 @@
-import 'package:flatmate/UserScreens/maintanance_screen.dart';
-import 'package:flatmate/admin/admin_dashboard.dart';
-import 'package:flatmate/admin/bottombar/admin_complain.dart';
-import 'package:flatmate/admin/bottombar/admin_maintense.dart';
-import 'package:flatmate/drawer/contact_details.dart';
-import 'package:flatmate/drawer/language.dart';
-import 'package:flatmate/drawer/profile.dart';
-import 'package:flatmate/drawer/security_details.dart';
 import 'package:flutter/material.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_database/firebase_database.dart';
+import '../../SameScreen/LoginScreen.dart';
+import '../../drawer/changepass.dart';
+import '../../drawer/contact_details.dart';
+import '../../drawer/language.dart';
+import '../../drawer/profile.dart';
+import '../../drawer/security_details.dart';
+import '../admin_dashboard.dart';
 import 'expense_form.dart';
 
+class ExpenseItem {
+  String title;
+  String description;
+  int amount;
+  String vendor;
+  String date;
+  String addedBy;
+  String ownerName;
+  String id; // Unique ID for deletion
+
+  ExpenseItem({
+    required this.title,
+    required this.description,
+    required this.amount,
+    required this.vendor,
+    required this.date,
+    required this.addedBy,
+    this.ownerName = 'Unknown',
+    required this.id,
+  });
+
+  factory ExpenseItem.fromMap(Map<dynamic, dynamic> data, String id) {
+    return ExpenseItem(
+      title: data['title'] ?? '',
+      description: data['description'] ?? '',
+      amount: data['amount'] ?? 0,
+      vendor: data['vendor'] ?? '',
+      date: data['date'] ?? '',
+      addedBy: data['added_by'] ?? 'Unknown',
+      id: id,
+    );
+  }
+}
+
 class AdminExpense extends StatefulWidget {
-  const AdminExpense({super.key});
+  const AdminExpense({Key? key}) : super(key: key);
 
   @override
   _AdminExpenseState createState() => _AdminExpenseState();
@@ -19,46 +53,85 @@ class AdminExpense extends StatefulWidget {
 
 class _AdminExpenseState extends State<AdminExpense> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  int _selectedIndex = 0;
+  String? adminId;
+  List<ExpenseItem> _expenses = [];
+  double _totalExpense = 0.0;
+  bool isLoading = true;
 
-  List<Map<String, dynamic>> expenses = [
-    {
-      "title": "Monthly Electricity Bill",
-      "date": "August 15, 2024",
-      "description": "Regular monthly electricity bill for the common areas.",
-      "vendor": "PowerGrid Inc.",
-      "amount": 1200.00,
-    },
-    {
-      "title": "Security Camera Installation",
-      "date": "August 20, 2024",
-      "description": "Installation of security cameras around the premises.",
-      "vendor": "SafeHome Security",
-      "amount": 10000.00,
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchExpenses();
+    _getTotalExpense();
+  }
 
-  // Function to delete an expense
-  void _deleteExpense(int index) {
+  Future<void> _deleteExpense(String? expenseId) async {
+    if (expenseId != null) {
+      await FirebaseDatabase.instance.ref('expenses/$expenseId').remove();
+      _fetchExpenses(); // Refresh the expenses list after deletion
+    }
+  }
+
+  Future<void> _getTotalExpense() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      expenses.removeAt(index);
+      _totalExpense = prefs.getDouble('total_expense') ?? 0;
     });
   }
 
-  // Function to navigate to AddExpenseForm and receive result
-  Future<void> _navigateToAddExpense() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AddExpenseForm(),
-      ),
-    );
+  Future<void> _saveTotalExpense(double totalExpense) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('total_expense', totalExpense);
+  }
 
-    // If result is not null, add the new expense to the list
-    if (result != null) {
-      setState(() {
-        expenses.add(result);
+  Future<void> _fetchExpenses() async {
+    final databaseReference = FirebaseDatabase.instance.ref();
+    DataSnapshot expensesSnapshot =
+        await databaseReference.child('expenses').get();
+    DataSnapshot adminSnapshot = await databaseReference.child('admin').get();
+
+    Map<dynamic, dynamic>? expensesData =
+        expensesSnapshot.value as Map<dynamic, dynamic>?;
+    Map<dynamic, dynamic>? adminData =
+        adminSnapshot.value as Map<dynamic, dynamic>?;
+
+    List<ExpenseItem> expensesList = [];
+
+    if (expensesData != null && adminData != null) {
+      expensesData.forEach((key, value) {
+        ExpenseItem expense = ExpenseItem.fromMap(value, key); // Use key as id
+        expense.ownerName =
+            adminData[expense.addedBy]?['ownerName'] ?? 'Unknown';
+        expensesList.add(expense);
       });
+
+      setState(() {
+        _expenses = expensesList;
+        isLoading = false;
+      });
+    }
+  }
+
+  // Future<void> _deleteExpense(String? expenseId) async {
+  //   if (expenseId != null) {
+  //     await FirebaseDatabase.instance.ref('expenses/$expenseId').remove();
+  //     _fetchExpenses();
+  //   }
+  // }
+
+  Future<void> _navigateToAddExpense() async {
+    if (adminId != null) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AddExpenseForm(adminId: adminId!),
+        ),
+      );
+      _fetchExpenses();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Admin ID not found.')),
+      );
     }
   }
 
@@ -67,31 +140,31 @@ class _AdminExpenseState extends State<AdminExpense> {
     var screenWidth = MediaQuery.of(context).size.width;
     var screenHeight = MediaQuery.of(context).size.height;
 
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        automaticallyImplyLeading: false,
         title: Text(
           'Expense List',
-          style: TextStyle(
-              fontSize: screenWidth * 0.07,
-              color: Colors.white,
-              letterSpacing: 1),
+          style: TextStyle(fontSize: screenWidth * 0.07, color: Colors.white),
         ),
         backgroundColor: const Color(0xFF06001A),
         toolbarHeight: screenHeight * 0.08,
         actions: [
           IconButton(
-            icon: Icon(Icons.menu, color: Colors.white),
+            icon: const Icon(Icons.menu, color: Colors.white),
             iconSize: screenWidth * 0.095,
             onPressed: () {
-              _scaffoldKey.currentState
-                  ?.openEndDrawer(); // Open right-side drawer
+              _scaffoldKey.currentState?.openEndDrawer();
             },
           ),
         ],
       ),
-      endDrawer: _buildDrawer(screenWidth, screenHeight),
       body: Padding(
         padding: EdgeInsets.all(screenWidth * 0.05),
         child: Column(
@@ -101,10 +174,8 @@ class _AdminExpenseState extends State<AdminExpense> {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color:
-                          const Color(0xFF4CD8F4), // Set the background color
-                      borderRadius:
-                          BorderRadius.circular(10), // Rounded corners
+                      color: const Color(0xFF4CD8F4),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: TextButton(
                       onPressed: _navigateToAddExpense,
@@ -114,15 +185,11 @@ class _AdminExpenseState extends State<AdminExpense> {
                           Text(
                             '  Add Expense',
                             style: TextStyle(
-                              color: Colors.black, // Text color
-                              fontSize:
-                                  screenWidth * 0.045, // Responsive font size
+                              color: Colors.black,
+                              fontSize: screenWidth * 0.045,
                             ),
                           ),
-                          Icon(
-                            Icons.add,
-                            color: Colors.black, // Icon color
-                          ),
+                          const Icon(Icons.add, color: Colors.black),
                         ],
                       ),
                     ),
@@ -131,19 +198,24 @@ class _AdminExpenseState extends State<AdminExpense> {
               ],
             ),
             SizedBox(height: screenHeight * 0.03),
+            Text(
+              'Total Fund: \$$_totalExpense',
+              style: TextStyle(
+                fontSize: screenWidth * 0.05,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: screenHeight * 0.03),
             Expanded(
               child: ListView.builder(
-                itemCount: expenses.length,
+                itemCount: _expenses.length,
                 itemBuilder: (context, index) {
                   return Container(
                     margin: EdgeInsets.only(bottom: screenHeight * 0.02),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: Colors.grey,
-                        width: 1,
-                      ),
+                      border: Border.all(color: Colors.grey, width: 1),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -152,16 +224,15 @@ class _AdminExpenseState extends State<AdminExpense> {
                           padding: EdgeInsets.all(screenWidth * 0.03),
                           decoration: BoxDecoration(
                             color: const Color(0xFFD8AFCC),
-                            borderRadius: BorderRadius.only(
+                            borderRadius: const BorderRadius.only(
                               topLeft: Radius.circular(10),
                               topRight: Radius.circular(10),
                             ),
                           ),
                           child: Text(
-                            expenses[index]["title"],
+                            _expenses[index].title,
                             style: TextStyle(
-                              fontSize:
-                                  screenWidth * 0.043, // Slightly smaller font
+                              fontSize: screenWidth * 0.043,
                               fontWeight: FontWeight.bold,
                               color: Colors.black87,
                             ),
@@ -173,115 +244,49 @@ class _AdminExpenseState extends State<AdminExpense> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Date : ${expenses[index]["date"]}',
-                                style: TextStyle(
-                                  fontSize: screenWidth *
-                                      0.038, // Slightly smaller font
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              SizedBox(height: screenHeight * 0.008),
-                              Text(
-                                'Description : ${expenses[index]["description"]}',
+                                'Date: ${_expenses[index].date}',
                                 style: TextStyle(
                                   fontSize: screenWidth * 0.038,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              SizedBox(height: screenHeight * 0.008),
+                              const SizedBox(height: 8),
                               Text(
-                                'Vendor : ${expenses[index]["vendor"]}',
+                                'Description: ${_expenses[index].description}',
                                 style: TextStyle(
                                   fontSize: screenWidth * 0.038,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              SizedBox(height: screenHeight * 0.008),
+                              const SizedBox(height: 8),
                               Text(
-                                'Amount : ${expenses[index]["amount"].toStringAsFixed(2)}',
+                                'Vendor: ${_expenses[index].vendor}',
                                 style: TextStyle(
                                   fontSize: screenWidth * 0.038,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              SizedBox(height: screenHeight * 0.01),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      // Implement edit functionality here
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Color.fromARGB(
-                                          255,
-                                          122,
-                                          197,
-                                          143), // Suggest greenish color for EDIT
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: screenHeight * 0.009,
-                                        horizontal: screenWidth * 0.06,
-                                      ),
-                                      elevation: 0, // No shadow
-                                    ),
-                                    child: Text(
-                                      'EDIT',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      // Implement download functionality here
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue,
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: screenHeight * 0.009,
-                                        horizontal: screenWidth * 0.06,
-                                      ),
-                                      elevation: 0, // No shadow
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.download,
-                                          size: screenWidth * 0.04,
-                                          color: Colors.white,
-                                        ),
-                                        SizedBox(width: screenWidth * 0.01),
-                                        Text(
-                                          'Download',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: () => _deleteExpense(index),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red,
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: screenHeight * 0.009,
-                                        horizontal: screenWidth * 0.06,
-                                      ),
-                                      elevation: 0, // No shadow
-                                    ),
-                                    child: Text(
-                                      'DELETE',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                              const SizedBox(height: 8),
+                              Text(
+                                'Amount: \$${_expenses[index].amount}',
+                                style: TextStyle(
+                                  fontSize: screenWidth * 0.038,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Added By: ${_expenses[index].ownerName}',
+                                style: TextStyle(
+                                  fontSize: screenWidth * 0.038,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              ElevatedButton(
+                                onPressed: () =>
+                                    _deleteExpense(_expenses[index].id),
+                                child: const Text('Delete'),
                               ),
                             ],
                           ),
@@ -295,201 +300,6 @@ class _AdminExpenseState extends State<AdminExpense> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 3,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-
-          // Add logic for navigation on different tabs
-          switch (index) {
-            case 0:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => HomePageA()),
-              );
-              break;
-            case 1:
-              // Navigate to Maintenance page when Maintenance tab is tapped
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => MaintenanceScreen()),
-              );
-              break;
-            case 2:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => AdminComplain()),
-              );
-              break;
-            case 3:
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => AdminExpense()),
-              );
-              break;
-          }
-        },
-        selectedItemColor: const Color(0xFF31B3CD),
-        unselectedItemColor: Color.fromARGB(255, 128, 130, 132),
-        backgroundColor: Colors.white,
-        type: BottomNavigationBarType.fixed,
-        selectedFontSize: 16,
-        unselectedFontSize: 13,
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home, size: 28),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.payment, size: 28),
-            label: 'Maintenance',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.feedback, size: 28),
-            label: 'Complaints',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.monetization_on, size: 28),
-            label: 'Expense List',
-          ),
-        ],
-        iconSize: 30,
-        elevation: 10,
-        showUnselectedLabels: true,
-      ),
-    );
-  }
-
-  Widget _buildDrawer(double screenWidth, double screenHeight) {
-    return Drawer(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: const Color(0xFF06001A),
-            ),
-            child: Center(
-              child: Column(
-                children: [
-                  SizedBox(height: screenHeight * 0.03),
-                  Container(
-                    width: screenWidth * 0.25,
-                    height: screenWidth * 0.25,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Center(
-                      child: Text(
-                        'HG',
-                        style: TextStyle(
-                          fontSize: screenWidth * 0.1,
-                          color: const Color(0xFF06001A),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Expanded(
-            child: Container(
-              color: const Color(0xFFE9F2F9),
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: <Widget>[
-                  _buildDrawerItem(Icons.edit, 'Profile', context, () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => ProfilePage()),
-                    );
-                  }),
-                  _buildDivider(),
-                  _buildDrawerItem(Icons.language, 'Language Settings', context,
-                      () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => LanguageSelectionPage()),
-                    );
-                  }),
-                  _buildDivider(),
-                  // _buildDrawerItem(Icons.lock, 'Change Password', context, () {
-                  //   Navigator.push(
-                  //     context,
-                  //     MaterialPageRoute(builder: (context) => ProfilePage()),
-                  //   );
-                  // }),
-                  // _buildDivider(),
-                  _buildDrawerItem(Icons.security, 'Security Details', context,
-                      () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => SecurityDetailsPage()),
-                    );
-                  }),
-                  _buildDivider(),
-                  _buildDrawerItem(
-                      Icons.contact_phone, 'Contact Information', context, () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => ContactDetailsPage()),
-                    );
-                  }),
-                  _buildDivider(),
-                ],
-              ),
-            ),
-          ),
-          Column(
-            children: [
-              Divider(thickness: 2, color: const Color(0xFF06001A)),
-              ListTile(
-                leading: Icon(Icons.logout, color: const Color(0xFF06001A)),
-                title: Text('Logout',
-                    style: TextStyle(color: const Color(0xFF06001A))),
-                onTap: () {
-                  // Handle logout
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDrawerItem(IconData icon, String title, BuildContext context,
-      [VoidCallback? onTap]) {
-    return ListTile(
-      leading: Icon(icon, color: const Color(0xFF06001A)),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: const Color(0xFF06001A),
-          fontSize: 16,
-        ),
-      ),
-      onTap: onTap ??
-          () {
-            // Default tap action (if not provided)
-          },
-    );
-  }
-
-  Widget _buildDivider() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Divider(color: Colors.black),
     );
   }
 }
