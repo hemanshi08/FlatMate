@@ -24,6 +24,131 @@ class DatabaseService {
 
   final DatabaseReference _complaintsRef =
       FirebaseDatabase.instance.ref().child('complaints');
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+
+  Future<List<Map<String, dynamic>>> getMaintenanceRequests() async {
+    final DatabaseReference _maintenanceRequestsRef =
+        FirebaseDatabase.instance.ref('maintenance_requests');
+    // final DatabaseReference _residentsRef =
+    //     FirebaseDatabase.instance.ref('residents');
+
+    List<Map<String, dynamic>> maintenanceRequests = [];
+
+    try {
+      // Fetch snapshot from Firebase database reference
+      DataSnapshot snapshot = await _maintenanceRequestsRef.get();
+
+      // Check if data exists
+      if (snapshot.exists) {
+        // Iterate through each child (maintenance request) in the snapshot
+        for (var child in snapshot.children) {
+          // Make sure the child value is a Map
+          if (child.value is Map) {
+            Map<String, dynamic> requestData =
+                Map<String, dynamic>.from(child.value as Map);
+
+            // Add an ID field from the Firebase key
+            requestData['id'] = child.key;
+
+            // Fetch user details for each maintenance request
+            Map<String, dynamic> usersData =
+                Map<String, dynamic>.from(requestData['users'] ?? {});
+
+            Map<String, dynamic> userDetails = {};
+            for (String userId in usersData.keys) {
+              DataSnapshot residentSnapshot =
+                  await _residentsRef.child(userId).get();
+
+              if (residentSnapshot.exists) {
+                Map<String, dynamic> residentData =
+                    Map<String, dynamic>.from(residentSnapshot.value as Map);
+
+                userDetails[userId] = {
+                  'flatNo': residentData['flatNo'] ?? 'Unknown Flat No',
+                  'ownerName': residentData['ownerName'] ?? 'Unknown Owner',
+                };
+              } else {
+                userDetails[userId] = {
+                  'flatNo': 'Unknown Flat No',
+                  'ownerName': 'Unknown Owner',
+                };
+              }
+            }
+
+            // Replace user IDs with detailed information
+            requestData['users'] = userDetails;
+            maintenanceRequests.add(requestData); // Add the request to the list
+          } else {
+            print('Skipping non-Map value: ${child.value}');
+          }
+        }
+      } else {
+        print('No data available.');
+      }
+    } catch (e, stacktrace) {
+      print('Error fetching maintenance requests: $e');
+      print('Stacktrace: $stacktrace');
+    }
+
+    return maintenanceRequests; // Return the list of maintenance requests
+  }
+
+//====================================
+
+  // cash in maintense fetch users
+  Future<List<Map<String, dynamic>>> getAllResidents() async {
+    // Example using Firebase Firestore
+    final CollectionReference residentsCollection =
+        FirebaseFirestore.instance.collection('residents');
+
+    QuerySnapshot querySnapshot = await residentsCollection.get();
+    return querySnapshot.docs
+        .map((doc) => doc.data() as Map<String, dynamic>)
+        .toList();
+  }
+
+  Future<void> addPaymentToMaintenance(
+      String requestId, Map<String, dynamic> paymentData) async {
+    final maintenanceDoc =
+        _db.collection('maintenance_requests').doc(requestId);
+
+    // Add the payment under the 'payments' sub-collection
+    await maintenanceDoc.collection('payments').add(paymentData);
+  }
+
+  // Fetch admin details by admin_id
+  Future<Map<String, dynamic>?> fetchAdminDetails(String adminId) async {
+    try {
+      final doc = await _db.collection('admin').doc(adminId).get();
+      if (doc.exists) {
+        print('Admin document exists.');
+        return doc.data();
+      } else {
+        print('Admin document does not exist.');
+        return null; // Admin document not found
+      }
+    } catch (e) {
+      print('Error fetching admin details: $e');
+      return null; // Return null in case of any error
+    }
+  }
+
+  // Fetch resident details by user_id
+  Future<Map<String, dynamic>?> fetchResidentDetails(String userId) async {
+    try {
+      final doc = await _db.collection('residents').doc(userId).get();
+      if (doc.exists) {
+        print('Resident document exists.');
+        return doc.data();
+      } else {
+        print('Resident document does not exist.');
+        return null; // Resident document not found
+      }
+    } catch (e) {
+      print('Error fetching resident details: $e');
+      return null; // Return null in case of any error
+    }
+  }
 
   final DatabaseReference _maintenanceRequestsRef =
       FirebaseDatabase.instance.ref().child('maintenance_requests');
@@ -392,54 +517,6 @@ class DatabaseService {
   }
 
   // Define the method to fetch maintenance requests
-  Future<List<Map<String, dynamic>>> getMaintenanceRequests() async {
-    List<Map<String, dynamic>> maintenanceRequests = [];
-
-    try {
-      DataSnapshot snapshot = await _maintenanceRequestsRef.get();
-
-      if (snapshot.exists) {
-        for (var child in snapshot.children) {
-          // Use a for loop
-          Map<String, dynamic> requestData =
-              Map<String, dynamic>.from(child.value as Map);
-
-          // Fetch the users and their payment status
-          Map<String, dynamic> usersData =
-              Map<String, dynamic>.from(requestData['users'] ?? {});
-
-
-          // Fetch resident details (flatNo and ownerName) for each user
-          Map<String, dynamic> userDetails = {};
-          for (String userId in usersData.keys) {
-            DataSnapshot residentSnapshot =
-                await _residentsRef.child(userId).get();
-
-            if (residentSnapshot.exists) {
-              Map<String, dynamic> residentData =
-                  Map<String, dynamic>.from(residentSnapshot.value as Map);
-              userDetails[userId] = {
-                'flatNo': residentData['flatNo'] ?? 'Unknown Flat No',
-                'ownerName': residentData['ownerName'] ?? 'Unknown Owner',
-              };
-            } else {
-              userDetails[userId] = {
-                'flatNo': 'Unknown Flat No',
-                'ownerName': 'Unknown Owner',
-              };
-            }
-          }
-
-          requestData['users'] = userDetails; // Replace user IDs with details
-          maintenanceRequests.add(requestData);
-        }
-      } else {
-        print('No data available.');
-      }
-    } catch (e) {
-      print("Error fetching maintenance requests: $e");
-    }
-
-    return maintenanceRequests;
-  }
+  
+//
 }
