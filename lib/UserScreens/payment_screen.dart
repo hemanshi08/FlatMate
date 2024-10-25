@@ -75,6 +75,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
         builder: (context) => PaymentSuccessPage(
           paymentId: response.paymentId ?? '',
           transactionId: response.paymentId ?? '',
+          userId: userId ?? '', // Pass the userId
+          requestId: widget.requestId, // Pass the requestId
+          ownerName: widget.ownerName, // Pass the ownerName
+          flatNo: widget.flatNo, // Pass the flatNo
+          amount: widget.amount, // Pass the amount
+          paymentStatus: 'Paid', // Pass the payment status
         ),
       ),
     );
