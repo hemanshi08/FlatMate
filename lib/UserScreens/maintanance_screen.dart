@@ -192,6 +192,7 @@ class _MaintenancePageState extends State<MaintenancePage> {
       String dir = (await getApplicationDocumentsDirectory()).path;
 
       // Create the directory if it doesn't exist
+      
       Directory directory = Directory(dir);
       if (!await directory.exists()) {
         await directory.create(recursive: true);

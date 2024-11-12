@@ -119,34 +119,33 @@ class DatabaseService {
   // Fetch admin details by admin_id
   Future<Map<String, dynamic>?> fetchAdminDetails(String adminId) async {
     try {
-      final doc = await _db.collection('admin').doc(adminId).get();
-      if (doc.exists) {
-        print('Admin document exists.');
-        return doc.data();
+      final snapshot = await _database.child('admin').child(adminId).get();
+      if (snapshot.exists) {
+        return Map<String, dynamic>.from(snapshot.value as Map);
       } else {
         print('Admin document does not exist.');
-        return null; // Admin document not found
+        return null;
       }
     } catch (e) {
       print('Error fetching admin details: $e');
-      return null; // Return null in case of any error
+      return null;
     }
   }
 
   // Fetch resident details by user_id
   Future<Map<String, dynamic>?> fetchResidentDetails(String userId) async {
     try {
-      final doc = await _db.collection('residents').doc(userId).get();
-      if (doc.exists) {
-        print('Resident document exists.');
-        return doc.data();
+      // Use Realtime Database path
+      final DataSnapshot snapshot = await _residentsRef.child(userId).get();
+      if (snapshot.exists) {
+        return Map<String, dynamic>.from(snapshot.value as Map);
       } else {
         print('Resident document does not exist.');
-        return null; // Resident document not found
+        return null;
       }
     } catch (e) {
       print('Error fetching resident details: $e');
-      return null; // Return null in case of any error
+      return null;
     }
   }
 
@@ -517,6 +516,165 @@ class DatabaseService {
   }
 
   // Define the method to fetch maintenance requests
-  
+
 //
+
+//update profile in drawer
+  // Assuming you already have methods for updating admin and resident profiles.
+
+  // Future<void> updateUserProfile(
+  //     String editedName, String editedPhoneNumber, String editedPeople) async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+
+  //   // Prioritize fetching the admin ID first, and fall back to user ID
+  //   String? userId = prefs.getString('admin_id');
+  //   if (userId == null) {
+  //     userId = prefs.getString('user_id');
+  //   }
+
+  //   if (userId != null) {
+  //     // Log the user ID to confirm which one is being used
+  //     print("UserId for updating profile: $userId");
+
+  //     // Check if the user ID corresponds to an admin
+  //     DatabaseReference adminRef =
+  //         FirebaseDatabase.instance.ref().child('admin').child(userId);
+  //     DataSnapshot adminSnapshot = await adminRef.get();
+
+  //     if (adminSnapshot.exists) {
+  //       // Update admin profile if it exists
+  //       print("Updating admin profile");
+  //       await updateAdminProfile(
+  //           userId, editedName, editedPhoneNumber, int.parse(editedPeople));
+  //     } else {
+  //       // Update resident profile if admin profile does not exist
+  //       print("Updating resident profile");
+  //       await updateResidentProfile(
+  //           userId, editedName, editedPhoneNumber, int.parse(editedPeople));
+  //     }
+  //   } else {
+  //     print("No user ID found");
+  //   }
+  // }
+
+  // Future<void> updateAdminProfile(
+  //     String adminId, String name, String phoneNumber, int people) async {
+  //   try {
+  //     await FirebaseDatabase.instance
+  //         .ref()
+  //         .child('admin')
+  //         .child(adminId)
+  //         .update({
+  //       'ownerName': name,
+  //       'contactNo': phoneNumber,
+  //       'people': people.toString(),
+  //     });
+  //     print("Admin profile updated successfully");
+  //   } catch (e) {
+  //     print("Error updating admin profile: $e");
+  //   }
+  // }
+
+  // Future<void> updateResidentProfile(
+  //     String residentId, String name, String phoneNumber, int people) async {
+  //   try {
+  //     await FirebaseDatabase.instance
+  //         .ref()
+  //         .child('residents')
+  //         .child(residentId)
+  //         .update({
+  //       'ownerName': name,
+  //       'contactNo': phoneNumber,
+  //       'people': people.toString(),
+  //     });
+  //     print("Resident profile updated successfully");
+  //   } catch (e) {
+  //     print("Error updating resident profile: $e");
+  //   }
+  // }
+
+  Future<void> updateUserProfile(
+      String editedName, String editedPhoneNumber, String editedPeople) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? username = prefs.getString('username'); // Fetch the stored username
+    String? userId;
+
+    if (username != null) {
+      print('Fetched username: $username');
+
+      // Determine role based on username
+      if (username.startsWith('admin_')) {
+        userId = prefs.getString('admin_id'); // Fetch admin ID
+        if (userId != null) {
+          print("UserId for updating profile: $userId");
+
+          // Check if the user ID corresponds to an admin
+          DatabaseReference adminRef =
+              FirebaseDatabase.instance.ref().child('admin').child(userId);
+          DataSnapshot adminSnapshot = await adminRef.get();
+
+          if (adminSnapshot.exists) {
+            // User is an admin
+            print("Updating admin profile");
+            await updateAdminProfile(
+                userId, editedName, editedPhoneNumber, int.parse(editedPeople));
+          }
+        }
+      } else {
+        userId = prefs.getString('user_id'); // Fetch user ID
+        if (userId != null) {
+          print("UserId for updating profile: $userId");
+
+          DatabaseReference residentRef =
+              FirebaseDatabase.instance.ref().child('residents').child(userId);
+          DataSnapshot residentSnapshot = await residentRef.get();
+
+          if (residentSnapshot.exists) {
+            // User is a resident
+            print("Updating resident profile");
+            await updateResidentProfile(
+                userId, editedName, editedPhoneNumber, int.parse(editedPeople));
+          }
+        }
+      }
+    } else {
+      print("No username found");
+    }
+  }
+
+  Future<void> updateAdminProfile(
+      String adminId, String name, String phoneNumber, int people) async {
+    try {
+      await FirebaseDatabase.instance
+          .ref()
+          .child('admin')
+          .child(adminId)
+          .update({
+        'ownerName': name,
+        'contactNo': phoneNumber,
+        'people': people.toString(),
+      });
+      print("Admin profile updated successfully");
+    } catch (e) {
+      print("Error updating admin profile: $e");
+    }
+  }
+
+  Future<void> updateResidentProfile(
+      String residentId, String name, String phoneNumber, int people) async {
+    try {
+      await FirebaseDatabase.instance
+          .ref()
+          .child('residents')
+          .child(residentId)
+          .update({
+        'ownerName': name,
+        'contactNo': phoneNumber,
+        'people': people.toString(),
+      });
+      print("Resident profile updated successfully");
+    } catch (e) {
+      print("Error updating resident profile: $e");
+    }
+  }
 }

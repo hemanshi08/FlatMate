@@ -50,7 +50,7 @@ class _ProfilePageState extends State<ProfilePage> {
               flatNumber = adminDetails['flatNo'] ?? 'N/A';
               email = adminDetails['email'] ?? 'N/A';
               phoneNumber = adminDetails['contactNo'] ?? 'N/A';
-              numberOfPeople = adminDetails['numberOfPeople'] ?? 0;
+              numberOfPeople = int.tryParse(adminDetails['people'] ?? '0') ?? 0;
             });
             return; // Exit if admin details are found
           } else {
@@ -72,7 +72,8 @@ class _ProfilePageState extends State<ProfilePage> {
               flatNumber = residentDetails['flatNo'] ?? 'N/A';
               email = residentDetails['email'] ?? 'N/A';
               phoneNumber = residentDetails['contactNo'] ?? 'N/A';
-              numberOfPeople = residentDetails['numberOfPeople'] ?? 0;
+              numberOfPeople =
+                  int.tryParse(residentDetails['people'] ?? '0') ?? 0;
             });
             return; // Exit if resident details are found
           } else {
@@ -114,6 +115,7 @@ class _ProfilePageState extends State<ProfilePage> {
       editedPhoneNumber = phoneNumber;
       editedPeople = numberOfPeople.toString();
     });
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -128,9 +130,20 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Name field with only bottom line
+                  // Name field with label and only bottom line
                   TextFormField(
                     initialValue: editedName,
-                    decoration: InputDecoration(labelText: 'Owner Name'),
+                    decoration: InputDecoration(
+                      labelText: 'Owner Name',
+                      labelStyle: TextStyle(color: Colors.indigo),
+                      border: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.indigo),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.indigo),
+                      ),
+                    ),
                     onChanged: (value) {
                       editedName = value;
                     },
@@ -141,29 +154,57 @@ class _ProfilePageState extends State<ProfilePage> {
                       return null;
                     },
                   ),
+                  SizedBox(height: 16),
+
+                  // Phone number field with label and only bottom line
                   TextFormField(
                     initialValue: editedPhoneNumber,
-                    decoration: InputDecoration(labelText: 'Phone Number'),
+                    decoration: InputDecoration(
+                      labelText: 'Phone Number',
+                      labelStyle: TextStyle(color: Colors.indigo),
+                      border: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.indigo),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.indigo),
+                      ),
+                    ),
                     onChanged: (value) {
                       editedPhoneNumber = value;
                     },
+                    keyboardType: TextInputType.phone,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter a phone number';
                       }
+                      if (value.length != 10) {
+                        return 'Phone number must be 10 digits';
+                      }
                       return null;
                     },
                   ),
+                  SizedBox(height: 16),
+
+// Number of people field with label and only bottom line
                   TextFormField(
                     initialValue: editedPeople,
-                    decoration: InputDecoration(labelText: 'Number of People'),
+                    decoration: InputDecoration(
+                      labelText: 'Number of People',
+                      labelStyle: TextStyle(color: Colors.indigo),
+                      border: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.indigo),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.indigo),
+                      ),
+                    ),
                     keyboardType: TextInputType.number,
                     onChanged: (value) {
                       editedPeople = value;
                     },
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter number of people';
+                        return 'Please enter the number of people';
                       }
                       if (int.tryParse(value) == null) {
                         return 'Please enter a valid number';
@@ -171,20 +212,36 @@ class _ProfilePageState extends State<ProfilePage> {
                       return null;
                     },
                   ),
-                  SizedBox(height: 20),
+                  SizedBox(height: 16),
+
+                  // Save changes button
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       if (_formKey.currentState!.validate()) {
                         setState(() {
                           ownerName = editedName;
                           phoneNumber = editedPhoneNumber;
                           numberOfPeople = int.parse(editedPeople);
                         });
+
+                        // Save data to the database
+                        await DatabaseService().updateUserProfile(
+                            editedName, editedPhoneNumber, editedPeople);
+
+                        // Save to SharedPreferences
                         _saveUserProfileToPreferences();
+
                         Navigator.pop(context);
                       }
                     },
                     child: Text('Save Changes'),
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.indigo,
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                      textStyle: TextStyle(fontSize: 16),
+                    ),
                   ),
                 ],
               ),
@@ -203,7 +260,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF06001A),
-        toolbarHeight: 60.0,
+        toolbarHeight: 80.0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           color: Colors.white,
@@ -221,6 +278,55 @@ class _ProfilePageState extends State<ProfilePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Center(
+            //   child: ownerName == 'Loading...'
+            //       ? CircularProgressIndicator()
+            //       : Container(
+            //           width: 100.0,
+            //           height: 100.0, // Rectangular shape with adjusted height
+            //           decoration: BoxDecoration(
+            //             borderRadius:
+            //                 BorderRadius.circular(30.0), // Rounded corners
+
+            //             //      gradient: LinearGradient(
+            //             //   colors: [
+            //             //     const Color(0xFF06001A), // Deep Purple
+            //             //     const Color(0xFF31B3CD), // Light Teal
+            //             //   ],
+            //             //   stops: [
+            //             //     0.0,
+            //             //     1.0
+            //             //   ], // Adjusting stops to cover the full range
+            //             //   begin: Alignment.bottomLeft,
+            //             //   end: Alignment.topRight,
+            //             // ),
+            //             color: const Color(0xFF06001A), // Deep Purple
+            //             boxShadow: [
+            //               BoxShadow(
+            //                 color: Colors.black.withOpacity(0.3),
+            //                 spreadRadius: 2,
+            //                 blurRadius: 6,
+            //                 offset: Offset(0, 4), // Shadow position
+            //               ),
+            //             ],
+            //             border: Border.all(
+            //               color: Colors.white, // White border
+            //               width: 4.0, // Border width
+            //             ),
+            //           ),
+            //           child: Center(
+            //             child: Text(
+            //               _getUserInitials(ownerName),
+            //               style: TextStyle(
+            //                 fontSize: 40, // Large size for visibility
+            //                 fontWeight: FontWeight.bold,
+            //                 color: Colors.white,
+            //               ),
+            //             ),
+            //           ),
+            //         ),
+            // ),
+            SizedBox(height: 20),
             Center(
               child: Text(
                 'Owner Information',
@@ -231,13 +337,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
             ),
-            SizedBox(height: 20),
-            ProfileRow(label: 'Name', value: ownerName),
-            ProfileRow(label: 'Wing_Flat', value: '$flatNumber'),
-            ProfileRow(label: 'Email', value: email),
-            ProfileRow(label: 'Phone', value: phoneNumber),
-            ProfileRow(
-                label: 'Number of People', value: numberOfPeople.toString()),
+            SizedBox(height: 16),
+            _buildProfileCard('Name', ownerName),
+            _buildProfileCard('Flat Number', flatNumber),
+            _buildProfileCard('Email', email),
+            _buildProfileCard('Phone', phoneNumber),
+            _buildProfileCard('Number of People', numberOfPeople.toString()),
             SizedBox(height: 20),
             Center(
               child: ElevatedButton(
@@ -256,42 +361,54 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
-}
 
-class ProfileRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const ProfileRow({
-    super.key,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            '$label:',
-            style: TextStyle(
-              fontSize: 16.0,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
+  Widget _buildProfileCard(String label, String value) {
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 8.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10.0),
+      ),
+      elevation: 5,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          children: [
+            Text(
+              '$label: ',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: Colors.blueGrey,
+              ),
             ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 16.0,
-              color: Colors.black54,
+            Expanded(
+              child: Text(
+                value,
+                style: TextStyle(fontSize: 18),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+
+  //Function to get initials based on the ownerName
+  // String _getUserInitials(String name) {
+  //   if (name.isEmpty) {
+  //     return 'NA'; // Return a default value if the name is empty
+  //   }
+
+  //   var nameParts = name.split(' ');
+
+  //   // Check if we have at least one part for initials
+  //   if (nameParts.length == 1) {
+  //     return nameParts[0][0].toUpperCase();
+  //   } else if (nameParts.length > 1) {
+  //     // Use first letter of first name and surname
+  //     return nameParts[0][0].toUpperCase() + nameParts[1][0].toUpperCase();
+  //   } else {
+  //     return 'NA'; // Fallback if split doesn't work as expected
+  //   }
+  // }
 }
