@@ -10,6 +10,9 @@ import 'package:flatmate/drawer/security_details.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
+import '../SameScreen/LoginScreen.dart';
+import '../drawer/changepass.dart';
+
 class ComplaintsApp extends StatelessWidget {
   const ComplaintsApp({super.key});
 
@@ -139,7 +142,7 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
           ),
         ],
       ),
-      endDrawer: _buildDrawer(screenWidth), // Right-side drawer
+      endDrawer: _buildDrawer(screenWidth, screenHeight), // Right-side drawer
 
       body: Column(
         children: [
@@ -344,21 +347,21 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
     );
   }
 
-  Widget _buildDrawer(double screenWidth) {
+  Widget _buildDrawer(double screenWidth, double screenHeight) {
     return Drawer(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: double.infinity,
-            padding: EdgeInsets.all(20),
+            padding: EdgeInsets.all(25),
             decoration: BoxDecoration(
               color: const Color(0xFF06001A),
             ),
             child: Center(
               child: Column(
                 children: [
-                  SizedBox(height: 20),
+                  SizedBox(height: screenHeight * 0.03),
                   Container(
                     width: screenWidth * 0.25,
                     height: screenWidth * 0.25,
@@ -367,13 +370,13 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Center(
-                      child: Text(
-                        'HG',
-                        style: TextStyle(
-                          fontSize: screenWidth * 0.1,
-                          color: const Color(0xFF06001A),
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Image.asset(
+                        'assets/flatmate_logo.png', // Replace with the path to your logo image
+                        width: screenWidth *
+                            0.4, // Adjust width as needed based on screen width
+                        height: screenWidth * 0.2, // Adjust height as needed
+                        fit: BoxFit
+                            .contain, // Adjust how the image fits within the size
                       ),
                     ),
                   ),
@@ -393,23 +396,24 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
                       MaterialPageRoute(builder: (context) => ProfilePage()),
                     );
                   }),
+                  // _buildDivider(),
+                  // _buildDrawerItem(Icons.language, 'Language Settings', context,
+                  //     () {
+                  //   Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(
+                  //         builder: (context) => LanguageSelectionPage()),
+                  //   );
+                  // }),
                   _buildDivider(),
-                  _buildDrawerItem(Icons.language, 'Language Settings', context,
-                      () {
+                  _buildDrawerItem(Icons.lock, 'Change Password', context, () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => LanguageSelectionPage()),
+                          builder: (context) => ChangePasswordPage()),
                     );
                   }),
                   _buildDivider(),
-                  // _buildDrawerItem(Icons.lock, 'Change Password', context, () {
-                  //   Navigator.push(
-                  //     context,
-                  //     MaterialPageRoute(builder: (context) => ProfilePage()),
-                  //   );
-                  // }),
-                  // _buildDivider(),
                   _buildDrawerItem(Icons.security, 'Security Details', context,
                       () {
                     Navigator.push(
@@ -440,7 +444,8 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
                 title: Text('Logout',
                     style: TextStyle(color: const Color(0xFF06001A))),
                 onTap: () {
-                  // Handle logout
+                  _databaseService.logout(
+                      context, LoginScreen()); // Call the logout method
                 },
               ),
             ],
@@ -469,63 +474,60 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
   }
 
   Widget _buildDivider() {
-    return Divider(
-      color: const Color(0xFF06001A),
-      thickness: 1.5,
-      indent: 20,
-      endIndent: 20,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Divider(color: Colors.black),
     );
   }
+}
 
-  // Show Complaint Details Dialog
-  void _showComplaintDetails(
-      BuildContext context, Map<String, String> complaint) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+// Show Complaint Details Dialog
+void _showComplaintDetails(
+    BuildContext context, Map<String, String> complaint) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    complaint['title']!,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              ),
+              SizedBox(height: 8),
+              Text(
+                complaint['date']!,
+                style: TextStyle(color: Colors.blue, fontSize: 14),
+              ),
+              SizedBox(height: 8),
+              Text(
+                complaint['description']!,
+                style: TextStyle(fontSize: 16),
+              ),
+            ],
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      complaint['title']!,
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.close),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8),
-                Text(
-                  complaint['date']!,
-                  style: TextStyle(color: Colors.blue, fontSize: 14),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  complaint['description']!,
-                  style: TextStyle(fontSize: 16),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
 }
 
 class ComplaintFormScreen extends StatefulWidget {

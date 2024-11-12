@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   @override
@@ -9,51 +9,32 @@ class ChangePasswordPage extends StatefulWidget {
 
 class _ChangePasswordPageState extends State<ChangePasswordPage> {
   final _formKey = GlobalKey<FormState>();
-  final _oldPasswordController = TextEditingController();
-  final _newPasswordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-  bool _obscureOldPassword = true;
-  bool _obscureNewPassword = true;
-  bool _obscureConfirmPassword = true;
+  final TextEditingController _oldPasswordController = TextEditingController();
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
-  @override
-  void dispose() {
-    _oldPasswordController.dispose();
-    _newPasswordController.dispose();
-    _confirmPasswordController.dispose();
-    super.dispose();
+  bool _isOldPasswordVisible = false;
+  bool _isNewPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
+
+  Future<bool> _verifyOldPassword(
+      String collection, String id, String oldPassword) async {
+    final ref = FirebaseDatabase.instance
+        .ref()
+        .child(collection)
+        .child(id)
+        .child('password');
+    final snapshot = await ref.get();
+    return snapshot.exists && snapshot.value == oldPassword;
   }
 
-  // Method to check if a document exists in either 'admin' or 'residents' collection
-  Future<bool> _doesDocumentExistInEitherCollection(
-      String field, String value) async {
-    try {
-      // Check in 'admin' collection
-      final adminSnapshot = await FirebaseFirestore.instance
-          .collection('admin')
-          .where(field, isEqualTo: value)
-          .get();
-
-      // If found in 'admin', return true
-      if (adminSnapshot.docs.isNotEmpty) {
-        return true;
-      }
-
-      // Check in 'residents' collection if not found in 'admin'
-      final residentSnapshot = await FirebaseFirestore.instance
-          .collection('residents')
-          .where(field, isEqualTo: value)
-          .get();
-
-      // Return true if found in 'residents'
-      return residentSnapshot.docs.isNotEmpty;
-    } catch (e) {
-      print('Error checking document existence: $e');
-      return false; // Return false on error
-    }
+  Future<void> _updatePassword(
+      String collection, String id, String newPassword) async {
+    final ref = FirebaseDatabase.instance.ref().child(collection).child(id);
+    await ref.update({'password': newPassword});
   }
 
-  // Method to validate and submit the form
   Future<void> _changePassword() async {
     if (_formKey.currentState!.validate()) {
       SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -61,114 +42,43 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       String? id;
 
       if (username != null) {
-        print('Fetched Username: $username');
+        String collection =
+            username.startsWith('admin_') ? 'admin' : 'residents';
+        id = prefs.getString(collection == 'admin' ? 'admin_id' : 'user_id');
 
-        if (username.startsWith('admin_')) {
-          // User is an admin
-          id = prefs.getString('admin_id'); // Fetch admin ID
-          if (id != null) {
-            print('Fetched Admin ID: $id');
+        if (id != null) {
+          bool oldPasswordValid = await _verifyOldPassword(
+              collection, id, _oldPasswordController.text);
+          if (oldPasswordValid) {
+            await _updatePassword(collection, id, _newPasswordController.text);
 
-            // Check if the admin document exists
-            bool exists =
-                await _doesDocumentExistInEitherCollection('admin_id', id);
-            if (exists) {
-              // Update password in the admin table
-              await _updateAdminPassword(id, _newPasswordController.text);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Admin password changed successfully')),
-              );
-            } else {
-              print('Admin document does not exist for ID: $id');
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Admin document not found.')),
-              );
-            }
-          } else {
-            print('Admin ID is null.');
+            // Clear all text fields
+            _oldPasswordController.clear();
+            _newPasswordController.clear();
+            _confirmPasswordController.clear();
+
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to fetch admin ID')),
+              SnackBar(content: Text('Password changed successfully')),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Old password is incorrect')),
             );
           }
         } else {
-          // User is a regular resident
-          id = prefs.getString('user_id'); // Fetch user ID
-          if (id != null) {
-            print('Fetched Resident ID: $id');
-
-            // Check if the resident document exists  
-            bool exists =
-                await _doesDocumentExistInEitherCollection('user_id', id);
-            if (exists) {
-              // Update password in the resident table
-              await _updateResidentPassword(id, _newPasswordController.text);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                    content: Text('Resident password changed successfully')),
-              );
-            } else {
-              print('Resident document does not exist for ID: $id');
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Resident document not found.')),
-              );
-            }
-          } else {
-            print('User ID is null for resident.');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to fetch user ID')),
-            );
-          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('User document not found.')),
+          );
         }
-      } else {
-        print('No username found in SharedPreferences.');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error fetching username')),
-        );
       }
     }
-  }
-
-  // Update password in admin table
-  Future<void> _updateAdminPassword(String id, String newPassword) async {
-    try {
-      await FirebaseFirestore.instance.collection('admin').doc(id).update({
-        'password': newPassword,
-      });
-      print('Admin password updated successfully.');
-    } catch (e) {
-      print('Error updating admin password: $e');
-      throw e;
-    }
-  }
-
-  // Update password in resident table
-  Future<void> _updateResidentPassword(String id, String newPassword) async {
-    try {
-      await FirebaseFirestore.instance.collection('residents').doc(id).update({
-        'password': newPassword,
-      });
-      print('Resident password updated successfully.');
-    } catch (e) {
-      print('Error updating resident password: $e');
-      throw e;
-    }
-  }
-
-  // Helper method to toggle password visibility
-  void _togglePasswordVisibility(bool isNewPassword) {
-    setState(() {
-      if (isNewPassword) {
-        _obscureNewPassword = !_obscureNewPassword;
-      } else {
-        _obscureConfirmPassword = !_obscureConfirmPassword;
-      }
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
+    // Get screen width and height
+    double screenWidth = MediaQuery.of(context).size.width;
+    double screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       appBar: AppBar(
@@ -184,128 +94,136 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(22.0),
+        padding: EdgeInsets.all(
+            screenWidth * 0.04), // Adjust padding based on screen width
+        child: Form(
+          key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Heading
               Center(
                 child: Text(
                   'Change Password',
                   style: TextStyle(
-                    fontSize: 24.0,
+                    fontSize: screenWidth * 0.06, // Responsive font size
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
                   ),
                 ),
               ),
-              SizedBox(height: screenHeight * 0.05),
-
-              // Form
-              Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    // Old Password field
-                    TextFormField(
-                      controller: _oldPasswordController,
-                      obscureText: _obscureOldPassword,
-                      decoration: InputDecoration(
-                        labelText: 'Old Password',
-                        border: OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscureOldPassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscureOldPassword = !_obscureOldPassword;
-                            });
-                          },
-                        ),
+              SizedBox(height: screenHeight * 0.04),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
+                child: TextFormField(
+                  controller: _oldPasswordController,
+                  decoration: InputDecoration(
+                    labelText: 'Old Password',
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isOldPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your old password';
-                        }
-                        return null;
+                      onPressed: () {
+                        setState(() {
+                          _isOldPasswordVisible = !_isOldPasswordVisible;
+                        });
                       },
                     ),
-                    SizedBox(height: screenHeight * 0.03),
-
-                    // New Password field
-                    TextFormField(
-                      controller: _newPasswordController,
-                      obscureText: _obscureNewPassword,
-                      decoration: InputDecoration(
-                        labelText: 'New Password',
-                        border: OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscureNewPassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
-                          onPressed: () {
-                            _togglePasswordVisibility(true);
-                          },
-                        ),
+                  ),
+                  obscureText: !_isOldPasswordVisible,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your old password';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+              SizedBox(height: screenHeight * 0.02),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
+                child: TextFormField(
+                  controller: _newPasswordController,
+                  decoration: InputDecoration(
+                    labelText: 'New Password',
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isNewPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your new password';
-                        } else if (value.length < 6) {
-                          return 'Password should be at least 6 characters long';
-                        }
-                        return null;
+                      onPressed: () {
+                        setState(() {
+                          _isNewPasswordVisible = !_isNewPasswordVisible;
+                        });
                       },
                     ),
-                    SizedBox(height: screenHeight * 0.03),
-
-                    // Confirm Password field
-                    TextFormField(
-                      controller: _confirmPasswordController,
-                      obscureText: _obscureConfirmPassword,
-                      decoration: InputDecoration(
-                        labelText: 'Confirm Password',
-                        border: OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscureConfirmPassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
-                          onPressed: () {
-                            _togglePasswordVisibility(false);
-                          },
-                        ),
+                  ),
+                  obscureText: !_isNewPasswordVisible,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a new password';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+              SizedBox(height: screenHeight * 0.02),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
+                child: TextFormField(
+                  controller: _confirmPasswordController,
+                  decoration: InputDecoration(
+                    labelText: 'Confirm Password',
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isConfirmPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please confirm your new password';
-                        } else if (value != _newPasswordController.text) {
-                          return 'Passwords do not match';
-                        }
-                        return null;
+                      onPressed: () {
+                        setState(() {
+                          _isConfirmPasswordVisible =
+                              !_isConfirmPasswordVisible;
+                        });
                       },
                     ),
-                    SizedBox(height: screenHeight * 0.05),
-
-                    // Change Password Button
-                    ElevatedButton(
-                      onPressed: _changePassword,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 16.0),
-                        child: Text(
-                          'Change Password',
-                          style: TextStyle(fontSize: 18.0),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
+                  obscureText: !_isConfirmPasswordVisible,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please confirm your new password';
+                    }
+                    if (value != _newPasswordController.text) {
+                      return 'New password and confirm password do not match';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+              SizedBox(height: screenHeight * 0.04),
+              ElevatedButton(
+                onPressed: _changePassword,
+                child: Text(
+                  'Submit',
+                  style: TextStyle(
+                    color: const Color(0xFF66123A),
+                    fontSize: screenWidth * 0.05, // Responsive font size
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                      const Color(0xFFD8AFCC), // Light purple background color
+                  padding: EdgeInsets.symmetric(
+                    horizontal: screenWidth *
+                        0.05, // Decrease horizontal padding to reduce width
+                    vertical: screenHeight *
+                        0.01, // Adjust vertical padding based on screen height
+                  ),
+                  minimumSize: const Size(200,
+                      50), // Set a fixed minimum width (e.g., 200) instead of double.infinity
                 ),
               ),
             ],

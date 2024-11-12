@@ -286,7 +286,7 @@ class _HomePageAState extends State<HomePageA> {
         children: [
           Container(
             width: double.infinity,
-            padding: EdgeInsets.all(20),
+            padding: EdgeInsets.all(25),
             decoration: BoxDecoration(
               color: const Color(0xFF06001A),
             ),
@@ -302,13 +302,13 @@ class _HomePageAState extends State<HomePageA> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Center(
-                      child: Text(
-                        'HG',
-                        style: TextStyle(
-                          fontSize: screenWidth * 0.1,
-                          color: const Color(0xFF06001A),
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Image.asset(
+                        'assets/flatmate_logo.png', // Replace with the path to your logo image
+                        width: screenWidth *
+                            0.4, // Adjust width as needed based on screen width
+                        height: screenWidth * 0.2, // Adjust height as needed
+                        fit: BoxFit
+                            .contain, // Adjust how the image fits within the size
                       ),
                     ),
                   ),
@@ -328,15 +328,15 @@ class _HomePageAState extends State<HomePageA> {
                       MaterialPageRoute(builder: (context) => ProfilePage()),
                     );
                   }),
-                  _buildDivider(),
-                  _buildDrawerItem(Icons.language, 'Language Settings', context,
-                      () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => LanguageSelectionPage()),
-                    );
-                  }),
+                  // _buildDivider(),
+                  // _buildDrawerItem(Icons.language, 'Language Settings', context,
+                  //     () {
+                  //   Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(
+                  //         builder: (context) => LanguageSelectionPage()),
+                  //   );
+                  // }),
                   _buildDivider(),
                   _buildDrawerItem(Icons.lock, 'Change Password', context, () {
                     Navigator.push(

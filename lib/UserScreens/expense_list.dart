@@ -8,8 +8,10 @@ import 'package:flatmate/drawer/profile.dart';
 import 'package:flatmate/drawer/security_details.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
-
-import '../data/database_service.dart'; // Ensure this exists and is correctly implemented
+import 'package:flatmate/data/database_service.dart';
+import '../SameScreen/LoginScreen.dart';
+import '../data/database_service.dart';
+import '../drawer/changepass.dart'; // Ensure this exists and is correctly implemented
 
 class ExpenseItem {
   String title;
@@ -292,7 +294,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
         children: [
           Container(
             width: double.infinity,
-            padding: EdgeInsets.all(20),
+            padding: EdgeInsets.all(25),
             decoration: BoxDecoration(
               color: const Color(0xFF06001A),
             ),
@@ -308,13 +310,13 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Center(
-                      child: Text(
-                        'HG',
-                        style: TextStyle(
-                          fontSize: screenWidth * 0.1,
-                          color: const Color(0xFF06001A),
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Image.asset(
+                        'assets/flatmate_logo.png', // Replace with the path to your logo image
+                        width: screenWidth *
+                            0.4, // Adjust width as needed based on screen width
+                        height: screenWidth * 0.2, // Adjust height as needed
+                        fit: BoxFit
+                            .contain, // Adjust how the image fits within the size
                       ),
                     ),
                   ),
@@ -334,23 +336,24 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                       MaterialPageRoute(builder: (context) => ProfilePage()),
                     );
                   }),
+                  // _buildDivider(),
+                  // _buildDrawerItem(Icons.language, 'Language Settings', context,
+                  //     () {
+                  //   Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(
+                  //         builder: (context) => LanguageSelectionPage()),
+                  //   );
+                  // }),
                   _buildDivider(),
-                  _buildDrawerItem(Icons.language, 'Language Settings', context,
-                      () {
+                  _buildDrawerItem(Icons.lock, 'Change Password', context, () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => LanguageSelectionPage()),
+                          builder: (context) => ChangePasswordPage()),
                     );
                   }),
                   _buildDivider(),
-                  // _buildDrawerItem(Icons.lock, 'Change Password', context, () {
-                  //   Navigator.push(
-                  //     context,
-                  //     MaterialPageRoute(builder: (context) => ProfilePage()),
-                  //   );
-                  // }),
-                  // _buildDivider(),
                   _buildDrawerItem(Icons.security, 'Security Details', context,
                       () {
                     Navigator.push(
@@ -380,10 +383,10 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                 leading: Icon(Icons.logout, color: const Color(0xFF06001A)),
                 title: Text('Logout',
                     style: TextStyle(color: const Color(0xFF06001A))),
-                onTap: () {
-                  // _databaseService.logout(
-                  // context, LoginScreen()); // Call the logout method
-                },
+                // onTap: () {
+                //   _databaseService.logout(
+                //       context, LoginScreen()); // 5Call the logout method
+                // },
               ),
             ],
           ),

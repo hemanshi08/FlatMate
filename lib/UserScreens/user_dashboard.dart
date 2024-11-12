@@ -15,6 +15,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../drawer/changepass.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -255,7 +257,7 @@ class _HomePageState extends State<HomePage> {
         children: [
           Container(
             width: double.infinity,
-            padding: EdgeInsets.all(20),
+            padding: EdgeInsets.all(25),
             decoration: BoxDecoration(
               color: const Color(0xFF06001A),
             ),
@@ -271,13 +273,13 @@ class _HomePageState extends State<HomePage> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Center(
-                      child: Text(
-                        'HG',
-                        style: TextStyle(
-                          fontSize: screenWidth * 0.1,
-                          color: const Color(0xFF06001A),
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Image.asset(
+                        'assets/flatmate_logo.png', // Replace with the path to your logo image
+                        width: screenWidth *
+                            0.4, // Adjust width as needed based on screen width
+                        height: screenWidth * 0.2, // Adjust height as needed
+                        fit: BoxFit
+                            .contain, // Adjust how the image fits within the size
                       ),
                     ),
                   ),
@@ -297,23 +299,24 @@ class _HomePageState extends State<HomePage> {
                       MaterialPageRoute(builder: (context) => ProfilePage()),
                     );
                   }),
+                  // _buildDivider(),
+                  // _buildDrawerItem(Icons.language, 'Language Settings', context,
+                  //     () {
+                  //   Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(
+                  //         builder: (context) => LanguageSelectionPage()),
+                  //   );
+                  // }),
                   _buildDivider(),
-                  _buildDrawerItem(Icons.language, 'Language Settings', context,
-                      () {
+                  _buildDrawerItem(Icons.lock, 'Change Password', context, () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => LanguageSelectionPage()),
+                          builder: (context) => ChangePasswordPage()),
                     );
                   }),
                   _buildDivider(),
-                  // _buildDrawerItem(Icons.lock, 'Change Password', context, () {
-                  //   Navigator.push(
-                  //     context,
-                  //     MaterialPageRoute(builder: (context) => ProfilePage()),
-                  //   );
-                  // }),
-                  // _buildDivider(),
                   _buildDrawerItem(Icons.security, 'Security Details', context,
                       () {
                     Navigator.push(

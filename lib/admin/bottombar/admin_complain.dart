@@ -10,6 +10,8 @@ import 'package:flatmate/drawer/language.dart';
 import 'package:flatmate/drawer/profile.dart';
 import 'package:flatmate/drawer/security_details.dart';
 
+import '../../drawer/changepass.dart';
+
 class AdminComplain extends StatefulWidget {
   const AdminComplain({super.key});
 
@@ -83,10 +85,10 @@ class _AdminComplainState extends State<AdminComplain> {
         toolbarHeight: screenHeight * 0.08,
         actions: [
           IconButton(
-            icon: Icon(Icons.menu),
+            icon: Icon(Icons.menu, color: Colors.white),
+            iconSize: screenWidth * 0.095,
             onPressed: () {
-              _scaffoldKey.currentState
-                  ?.openEndDrawer(); // Open right-side drawer
+              _scaffoldKey.currentState?.openEndDrawer();
             },
           ),
         ],
@@ -352,7 +354,7 @@ class _AdminComplainState extends State<AdminComplain> {
         children: [
           Container(
             width: double.infinity,
-            padding: EdgeInsets.all(20),
+            padding: EdgeInsets.all(25),
             decoration: BoxDecoration(
               color: const Color(0xFF06001A),
             ),
@@ -368,13 +370,13 @@ class _AdminComplainState extends State<AdminComplain> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Center(
-                      child: Text(
-                        'HG',
-                        style: TextStyle(
-                          fontSize: screenWidth * 0.1,
-                          color: const Color(0xFF06001A),
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Image.asset(
+                        'assets/flatmate_logo.png', // Replace with the path to your logo image
+                        width: screenWidth *
+                            0.4, // Adjust width as needed based on screen width
+                        height: screenWidth * 0.2, // Adjust height as needed
+                        fit: BoxFit
+                            .contain, // Adjust how the image fits within the size
                       ),
                     ),
                   ),
@@ -394,23 +396,24 @@ class _AdminComplainState extends State<AdminComplain> {
                       MaterialPageRoute(builder: (context) => ProfilePage()),
                     );
                   }),
+                  // _buildDivider(),
+                  // _buildDrawerItem(Icons.language, 'Language Settings', context,
+                  //     () {
+                  //   Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(
+                  //         builder: (context) => LanguageSelectionPage()),
+                  //   );
+                  // }),
                   _buildDivider(),
-                  _buildDrawerItem(Icons.language, 'Language Settings', context,
-                      () {
+                  _buildDrawerItem(Icons.lock, 'Change Password', context, () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => LanguageSelectionPage()),
+                          builder: (context) => ChangePasswordPage()),
                     );
                   }),
                   _buildDivider(),
-                  // _buildDrawerItem(Icons.lock, 'Change Password', context, () {
-                  //   Navigator.push(
-                  //     context,
-                  //     MaterialPageRoute(builder: (context) => ProfilePage()),
-                  //   );
-                  // }),
-                  // _buildDivider(),
                   _buildDrawerItem(Icons.security, 'Security Details', context,
                       () {
                     Navigator.push(
@@ -440,9 +443,10 @@ class _AdminComplainState extends State<AdminComplain> {
                 leading: Icon(Icons.logout, color: const Color(0xFF06001A)),
                 title: Text('Logout',
                     style: TextStyle(color: const Color(0xFF06001A))),
-                onTap: () {
-                  // Handle logout
-                },
+                // onTap: () {
+                //   _databaseService.logout(
+                //       context, LoginScreen()); // Call the logout method
+                // },
               ),
             ],
           ),
