@@ -28,146 +28,142 @@ class _LoginScreenState extends State<LoginScreen> {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
 
-    return WillPopScope(
-      onWillPop: () async => false, // Prevent back navigation
-      child: Scaffold(
-        backgroundColor: const Color(0xFF06001A),
-        body: SingleChildScrollView(
-          child: SizedBox(
-            height: screenHeight,
-            width: screenWidth,
-            child: Stack(
-              children: [
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 31),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(
-                          'LOGIN',
-                          style: TextStyle(
-                            fontSize: screenHeight * 0.05,
-                            color: const Color(0xFFD8AFCC),
-                            fontWeight: FontWeight.bold,
+    return Scaffold(
+      backgroundColor: const Color(0xFF06001A),
+      body: SingleChildScrollView(
+        child: SizedBox(
+          height: screenHeight,
+          width: screenWidth,
+          child: Stack(
+            children: [
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 31),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'LOGIN',
+                        style: TextStyle(
+                          fontSize: screenHeight * 0.05,
+                          color: const Color(0xFFD8AFCC),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: screenHeight * 0.06),
+
+                      // Username TextField
+                      TextFormField(
+                        controller: _usernameController,
+                        decoration: InputDecoration(
+                          hintText: 'Username',
+                          hintStyle: TextStyle(
+                            fontSize: screenHeight * 0.022,
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 10, horizontal: 15),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        SizedBox(height: screenHeight * 0.06),
+                        validator: (value) => value!.isEmpty
+                            ? 'Please enter your username'
+                            : null,
+                      ),
+                      SizedBox(height: screenHeight * 0.032),
 
-                        // Username TextField
-                        TextFormField(
-                          controller: _usernameController,
-                          decoration: InputDecoration(
-                            hintText: 'Username',
-                            hintStyle: TextStyle(
-                              fontSize: screenHeight * 0.022,
-                            ),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(
-                                vertical: 10, horizontal: 15),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
+                      // Password TextField
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: !_isPasswordVisible,
+                        decoration: InputDecoration(
+                          hintText: 'Password',
+                          hintStyle: TextStyle(
+                            fontSize: screenHeight * 0.022,
                           ),
-                          validator: (value) => value!.isEmpty
-                              ? 'Please enter your username'
-                              : null,
-                        ),
-                        SizedBox(height: screenHeight * 0.032),
-
-                        // Password TextField
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: !_isPasswordVisible,
-                          decoration: InputDecoration(
-                            hintText: 'Password',
-                            hintStyle: TextStyle(
-                              fontSize: screenHeight * 0.022,
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 10, horizontal: 15),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isPasswordVisible
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
                             ),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(
-                                vertical: 10, horizontal: 15),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _isPasswordVisible
-                                    ? Icons.visibility
-                                    : Icons.visibility_off,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _isPasswordVisible = !_isPasswordVisible;
-                                });
-                              },
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          validator: (value) => value!.isEmpty
-                              ? 'Please enter your password'
-                              : null,
-                        ),
-                        SizedBox(height: screenHeight * 0.032),
-
-                        // Login Button
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
                             onPressed: () {
-                              _login();
+                              setState(() {
+                                _isPasswordVisible = !_isPasswordVisible;
+                              });
                             },
-                            style: ElevatedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(
-                                vertical: screenHeight * 0.010,
-                              ),
-                              backgroundColor: const Color(0xFF31B3CD),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: Text(
-                              'LOGIN',
-                              style: TextStyle(
-                                fontSize: screenHeight * 0.0245,
-                                color: const Color(0xFF06001A),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        SizedBox(height: screenHeight * 0.023),
+                        validator: (value) => value!.isEmpty
+                            ? 'Please enter your password'
+                            : null,
+                      ),
+                      SizedBox(height: screenHeight * 0.032),
 
-                        // Forgot password text
-                        Align(
-                          alignment: Alignment.bottomLeft,
-                          child: GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        const ForgotPassword()),
-                              );
-                            },
-                            child: Text(
-                              'Forgot password?',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: screenHeight * 0.0235,
-                              ),
+                      // Login Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            _login();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(
+                              vertical: screenHeight * 0.010,
+                            ),
+                            backgroundColor: const Color(0xFF31B3CD),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: Text(
+                            'LOGIN',
+                            style: TextStyle(
+                              fontSize: screenHeight * 0.0245,
+                              color: const Color(0xFF06001A),
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
-                        SizedBox(height: screenHeight * 0.032),
-                      ],
-                    ),
+                      ),
+                      SizedBox(height: screenHeight * 0.023),
+
+                      // Forgot password text
+                      Align(
+                        alignment: Alignment.bottomLeft,
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const ForgotPassword()),
+                            );
+                          },
+                          child: Text(
+                            'Forgot password?',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: screenHeight * 0.0235,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: screenHeight * 0.032),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -209,7 +205,12 @@ class _LoginScreenState extends State<LoginScreen> {
               "Admin ID saved: $adminID"); // Make sure this outputs the correct ID after login
 
           // Navigate to HomePageA without passing ownerName
-          Navigator.pushReplacementNamed(context, '/adminDashboard');
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HomePageA(), // No ownerName needed here
+            ),
+          );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Incorrect password')),
@@ -251,8 +252,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
           print(
               "User ID saved: $userID"); // Make sure this outputs the correct ID after login
-          // Navigate to HomePage without allowing back navigation to the login screen
-          Navigator.pushReplacementNamed(context, '/userDashboard');
+          // Redirect to user dashboard
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HomePage(),
+            ),
+          );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Incorrect password')),
