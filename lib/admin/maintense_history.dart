@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_database/firebase_database.dart';
 
 class MaintenanceHistoryScreen extends StatefulWidget {
   const MaintenanceHistoryScreen({super.key});
@@ -12,126 +11,38 @@ class MaintenanceHistoryScreen extends StatefulWidget {
 class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
   bool isPaidSelected = true;
   TextEditingController searchController = TextEditingController();
-  List<Map<String, String>> displayedList = [];
-  List<Map<String, String>> allEntries = []; // Store all entries for searching
 
-  // Firebase Database reference
-  final database = FirebaseDatabase.instance.ref();
+  // Static data
+  List<Map<String, String>> paid = [
+    {'flat': 'A_101', 'name': 'Kashish'},
+    {'flat': 'A_102', 'name': 'Hemanshi Garnara'},
+  ];
+  List<Map<String, String>> unpaid = [
+    {'flat': 'A_103', 'name': 'Hemanshi'},
+  ];
+  List<Map<String, String>> displayedList = [];
 
   @override
   void initState() {
     super.initState();
-    fetchMaintenanceData();
-
-    // Update displayed list when search text changes
+    updateDisplayedList();
     searchController.addListener(() {
       updateSearchResults(searchController.text);
     });
   }
 
-  Future<Map<String, String>> fetchResidentsData() async {
-    try {
-      DatabaseEvent event = await database.child('residents').once();
-      print("Residents Event: ${event.snapshot.value}"); // Debug log
-
-      if (event.snapshot.exists) {
-        Map<dynamic, dynamic>? data =
-            event.snapshot.value as Map<dynamic, dynamic>?;
-
-        if (data != null) {
-          Map<String, String> residentsMap = {};
-          data.forEach((key, value) {
-            if (value is Map<dynamic, dynamic>) {
-              String userId = key.toString();
-              // Check if keys exist before accessing their values
-              String flatNo = value.containsKey('flatNo')
-                  ? value['flatNo']
-                  : 'Unknown Flat';
-              String ownerName = value.containsKey('ownerName')
-                  ? value['ownerName']
-                  : 'Unknown Owner';
-              residentsMap[userId] = '$flatNo,$ownerName';
-            }
-          });
-          return residentsMap;
-        } else {
-          print("No data found for residents.");
-        }
-      } else {
-        print("Snapshot does not exist for residents.");
-      }
-    } catch (e) {
-      print("Error fetching residents data: $e");
-    }
-    return {};
-  }
-
-  Future<void> fetchMaintenanceData() async {
-    try {
-      Map<String, String> residentsMap = await fetchResidentsData();
-      print("Residents Data: $residentsMap"); // Debug log
-
-      DatabaseEvent event = await database.child('maintenance_requests').once();
-      print("Maintenance Requests Data: ${event.snapshot.value}"); // Debug log
-
-      Map<dynamic, dynamic>? data =
-          event.snapshot.value as Map<dynamic, dynamic>?;
-
-      if (data != null) {
-        List<Map<String, String>> paid = [];
-        List<Map<String, String>> unpaid = [];
-
-        data.forEach((key, request) {
-          if (request is Map<dynamic, dynamic> &&
-              request.containsKey('payments') &&
-              request['payments'] is Map) {
-            Map<dynamic, dynamic> payments = request['payments'];
-
-            payments.forEach((paymentKey, payment) {
-              if (payment is Map<dynamic, dynamic> &&
-                  payment.containsKey('payment_status')) {
-                String status = payment['payment_status'] as String;
-                String userId = payment['user_id'] ??
-                    ''; // Assuming user_id is stored in payment
-                String flatAndName =
-                    residentsMap[userId] ?? 'Unknown Flat, Unknown Owner';
-                List<String> flatAndOwnerDetails = flatAndName.split(',');
-
-                String flat = flatAndOwnerDetails[0];
-                String name = flatAndOwnerDetails[1];
-
-                if (status == 'Paid') {
-                  paid.add({'flat': flat, 'name': name});
-                } else {
-                  unpaid.add({'flat': flat, 'name': name});
-                }
-              }
-            });
-          }
-        });
-
-        allEntries =
-            isPaidSelected ? paid : unpaid; // Store all entries for searching
-        print(
-            "Fetched Entries: $allEntries"); // Debug log to check fetched entries
-        setState(() {
-          displayedList = allEntries;
-        });
-      } else {
-        print("No data found in Firebase for maintenance_requests.");
-      }
-    } catch (e) {
-      print("Error fetching data: $e");
-    }
+  void updateDisplayedList() {
+    setState(() {
+      displayedList = isPaidSelected ? paid : unpaid;
+    });
   }
 
   void updateSearchResults(String query) {
     setState(() {
       if (query.isEmpty) {
-        displayedList =
-            allEntries; // Reset to all entries when the query is empty
+        displayedList = isPaidSelected ? paid : unpaid;
       } else {
-        displayedList = allEntries.where((element) {
+        displayedList = (isPaidSelected ? paid : unpaid).where((element) {
           return element['flat']!.toLowerCase().contains(query.toLowerCase()) ||
               element['name']!.toLowerCase().contains(query.toLowerCase());
         }).toList();
@@ -147,20 +58,26 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-    final textScaleFactor = MediaQuery.of(context).textScaleFactor;
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF06001A),
         title: Text(
-          'Maintenance History',
+          'Maintense History',
           style: TextStyle(
             color: Colors.white,
-            fontSize: screenWidth * 0.06,
+            fontSize: screenWidth * 0.065, // Responsive font size
             letterSpacing: 1,
           ),
         ),
+        backgroundColor: const Color(0xFF06001A),
         toolbarHeight: 60.0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          color: Colors.white,
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
       ),
       body: Padding(
         padding: EdgeInsets.all(screenWidth * 0.05),
@@ -206,7 +123,7 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
                       onTap: () {
                         setState(() {
                           isPaidSelected = true;
-                          fetchMaintenanceData(); // Refresh list
+                          updateDisplayedList();
                         });
                       },
                       child: Container(
@@ -238,7 +155,7 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
                       onTap: () {
                         setState(() {
                           isPaidSelected = false;
-                          fetchMaintenanceData(); // Refresh list
+                          updateDisplayedList();
                         });
                       },
                       child: Container(
