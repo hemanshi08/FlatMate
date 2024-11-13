@@ -10,6 +10,8 @@ import 'package:flatmate/drawer/language.dart';
 import 'package:flatmate/drawer/profile.dart';
 import 'package:flatmate/drawer/security_details.dart';
 
+import '../../SameScreen/LoginScreen.dart';
+import '../../data/database_service.dart';
 import '../../drawer/changepass.dart';
 
 class AdminComplain extends StatefulWidget {
@@ -20,6 +22,7 @@ class AdminComplain extends StatefulWidget {
 }
 
 class _AdminComplainState extends State<AdminComplain> {
+  final DatabaseService _databaseService = DatabaseService();
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -443,10 +446,10 @@ class _AdminComplainState extends State<AdminComplain> {
                 leading: Icon(Icons.logout, color: const Color(0xFF06001A)),
                 title: Text('Logout',
                     style: TextStyle(color: const Color(0xFF06001A))),
-                // onTap: () {
-                //   _databaseService.logout(
-                //       context, LoginScreen()); // Call the logout method
-                // },
+                onTap: () {
+                  _databaseService.logout(
+                      context, LoginScreen()); // Call the logout method
+                },
               ),
             ],
           ),

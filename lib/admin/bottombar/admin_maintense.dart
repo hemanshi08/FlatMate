@@ -7,6 +7,7 @@ import 'package:flatmate/drawer/language.dart';
 import 'package:flatmate/drawer/profile.dart';
 import 'package:flatmate/drawer/security_details.dart';
 import 'package:flutter/material.dart';
+import '../../SameScreen/LoginScreen.dart';
 import '../../drawer/changepass.dart';
 import 'maintense_request_form.dart'; // Ensure this import is present
 
@@ -18,6 +19,7 @@ class MaintenanceScreen extends StatefulWidget {
 }
 
 class _MaintenanceScreenState extends State<MaintenanceScreen> {
+  final DatabaseService _databaseService = DatabaseService();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedIndex = 0;
 
@@ -322,10 +324,10 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                 leading: Icon(Icons.logout, color: const Color(0xFF06001A)),
                 title: Text('Logout',
                     style: TextStyle(color: const Color(0xFF06001A))),
-                // onTap: () {
-                //   _databaseService.logout(
-                //       context, LoginScreen()); // Call the logout method
-                // },
+                onTap: () {
+                  _databaseService.logout(
+                      context, LoginScreen()); // Call the logout method
+                },
               ),
             ],
           ),

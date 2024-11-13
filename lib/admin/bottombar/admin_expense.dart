@@ -56,6 +56,7 @@ class AdminExpense extends StatefulWidget {
 }
 
 class _AdminExpenseState extends State<AdminExpense> {
+  final DatabaseService _databaseService = DatabaseService();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   List<ExpenseItem> expenses = []; // Changed to ExpenseItem
   String? adminId;
@@ -492,10 +493,10 @@ class _AdminExpenseState extends State<AdminExpense> {
                 leading: Icon(Icons.logout, color: const Color(0xFF06001A)),
                 title: Text('Logout',
                     style: TextStyle(color: const Color(0xFF06001A))),
-                // onTap: () {
-                //   _databaseService.logout(
-                //       context, LoginScreen()); // Call the logout method
-                // },
+                onTap: () {
+                  _databaseService.logout(
+                      context, LoginScreen()); // Call the logout method
+                },
               ),
             ],
           ),
