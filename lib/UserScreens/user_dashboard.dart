@@ -101,10 +101,11 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             Text(
-              ownerName ?? '', // Dynamically display the owner name
+              (ownerName ?? '')
+                  .toUpperCase(), // Dynamically display the owner name
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: screenWidth * 0.08,
+                fontSize: screenWidth * 0.072,
                 color: const Color(0xFF31B3CD),
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1,
@@ -147,7 +148,7 @@ class _HomePageState extends State<HomePage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: (index) {
+        onTap: (index) async {
           setState(() {
             _selectedIndex = index;
           });
@@ -156,6 +157,15 @@ class _HomePageState extends State<HomePage> {
           switch (index) {
             case 0:
               // If home is selected, you can refresh the HomePage or stay here
+              var refresh = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => HomePage()),
+              );
+              if (refresh == true) {
+                setState(() {
+                  // Trigger a refresh on HomePageA if needed
+                });
+              }
               break;
             case 1:
               // Navigate to Maintenance page when Maintenance tab is tapped
