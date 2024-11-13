@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flatmate/admin/admin_dashboard.dart';
 import 'package:flatmate/data/database_service.dart';
 import 'firebase_options.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -36,11 +37,19 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(
-        //  fontFamily: 'Roboto', for global font family
         fontFamily: 'OpenSans',
       ),
       debugShowCheckedModeBanner: false,
-      home: SplashScreen(),
+      // Set initial route to SplashScreen
+      initialRoute: '/',
+      // Define named routes
+      routes: {
+        '/': (context) => SplashScreen(),
+        '/login': (context) => LoginScreen(),
+        '/forgotPassword': (context) => ForgotPassword(),
+        '/userDashboard': (context) => HomePage(),
+         '/adminDashboard': (context) => HomePageA(),
+      },
     );
   }
 }
